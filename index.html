@@ -30,6 +30,7 @@
             </div>
           </fieldset>
           <label class="consent"><input id="consent" type="checkbox" required /><span>I understand that anonymous study activity data will be recorded and I agree to continue.</span></label>
+          <label class="consent eye-consent"><input id="eyeTrackingConsent" type="checkbox" /><span><strong>Enable visual eye tracking (optional).</strong> This uses the webcam to estimate where I look. Video is processed on this device and is not saved or uploaded.</span></label>
           <button class="primary-button" type="submit">Begin lessons <span aria-hidden="true">→</span></button>
         </form>
       </section>
@@ -63,8 +64,14 @@
         <div class="researcher-panel"><h2>Researcher tools</h2><p>Download all study sessions stored in this browser. Keep this section for the researcher, not the participant.</p><div class="researcher-actions"><button id="downloadCsv" class="secondary-button" type="button">Download CSV</button><button id="newParticipant" class="primary-button" type="button">Start next participant</button></div><p id="saveStatus" class="save-status"></p></div>
       </section>
     </main>
+    <div id="calibrationView" class="calibration-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="calibrationTitle">
+      <div id="calibrationIntro" class="calibration-card"><div class="eyebrow">Optional eye tracking</div><h1 id="calibrationTitle">Calibrate your gaze</h1><p>Allow camera access, sit comfortably, and keep your head still. You will click nine dots three times each while looking directly at them.</p><div class="privacy-note"><strong>Your privacy</strong><span>Webcam images stay in this browser. Only estimated screen coordinates and timestamps are recorded.</span></div><button id="startCalibration" class="primary-button" type="button">Allow camera & start</button><button id="skipCalibration" class="text-button" type="button">Continue without eye tracking</button><p id="cameraStatus" role="status"></p></div>
+      <div id="calibrationStage" class="calibration-stage hidden"><div class="calibration-instruction">Look at each dot and click it 3 times · <span id="calibrationProgress">0/27</span></div><div id="calibrationPoints"></div></div>
+    </div>
+    <div id="gazeDot" class="gaze-dot hidden" aria-hidden="true"></div>
     <footer><span>Adaptive Learning Research Study</span><span>Anonymous participant data only</span></footer>
   </div>
+  <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
