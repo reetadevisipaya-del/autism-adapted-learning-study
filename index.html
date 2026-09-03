@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Codex Learn: a comparative educational interface study." />
+  <title>Codex Learn Study</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div id="app" class="app adapted">
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="Codex Learn home"><span class="brand-mark">C</span><span>CODEX <b>LEARN</b></span></a>
+      <div class="header-meta"><span id="conditionBadge">Study setup</span><button id="soundToggle" class="icon-button" type="button" aria-pressed="false">Sound off</button></div>
+    </header>
+    <div id="progressShell" class="progress-shell hidden" aria-label="Study progress"><div><span id="stepLabel">Step 1 of 4</span><span id="percentLabel">25%</span></div><div class="progress-track"><div id="progressBar"></div></div></div>
+    <main id="main" tabindex="-1">
+      <section id="setupView" class="view setup-view">
+        <div class="eyebrow">Educational interface study</div>
+        <h1>Choose how you would like to learn.</h1>
+        <p class="lead">You will read three short lessons, then answer 10 easy questions. You can continue after any answer.</p>
+        <div class="notice"><strong>Before you begin</strong><span>This activity takes about 8–10 minutes. Your answers and completion times are recorded for research.</span></div>
+        <form id="setupForm">
+          <label class="field"><span>Participant ID <small>(do not enter a name)</small></span><input id="participantId" maxlength="24" required placeholder="Example: P014" autocomplete="off" /></label>
+          <fieldset><legend>Select one interface</legend>
+            <div class="condition-grid">
+              <label class="condition-card selected"><input type="radio" name="condition" value="adapted" checked /><span class="choice-title"><span class="choice-icon calm">A</span>Autism-adapted</span><span>Calm colours, predictable layout, clear steps, reduced distraction and optional sound.</span><span class="choice-check">Selected</span></label>
+              <label class="condition-card"><input type="radio" name="condition" value="standard" /><span class="choice-title"><span class="choice-icon vivid">S</span>Standard</span><span>A conventional, visually busy learning interface with the same lessons and questions.</span><span class="choice-check">Select</span></label>
+            </div>
+          </fieldset>
+          <label class="consent"><input id="consent" type="checkbox" required /><span>I understand that anonymous study activity data will be recorded and I agree to continue.</span></label>
+          <button class="primary-button" type="submit">Begin lessons <span aria-hidden="true">→</span></button>
+        </form>
+      </section>
+
+      <section id="lessonView" class="view hidden" aria-live="polite">
+        <div class="content-card">
+          <div class="lesson-kicker" id="lessonKicker">Lesson 1 of 3</div>
+          <h1 id="lessonTitle"></h1>
+          <div id="lessonBody"></div>
+          <div class="lesson-actions"><span class="quiet-hint">Take your time. There is no countdown.</span><button id="nextLesson" class="primary-button" type="button">Next lesson <span aria-hidden="true">→</span></button></div>
+        </div>
+      </section>
+
+      <section id="quizView" class="view hidden" aria-live="polite">
+        <div class="quiz-layout">
+          <aside class="question-map" aria-label="Question progress"><h2>Your progress</h2><div id="questionDots"></div><p>One question at a time</p></aside>
+          <div class="content-card question-card">
+            <div class="question-meta"><span id="subjectPill">Maths</span><span id="questionCount">Question 1 of 10</span></div>
+            <h1 id="questionText"></h1>
+            <div id="questionVisual"></div>
+            <fieldset id="answers"><legend class="sr-only">Choose one answer</legend></fieldset>
+            <div id="answerMessage" class="answer-message hidden" role="status"></div>
+            <button id="nextQuestion" class="primary-button" type="button" disabled>Continue <span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section id="resultsView" class="view results-view hidden" aria-live="polite">
+        <div class="result-icon">✓</div><div class="eyebrow">Activity complete</div><h1>Thank you for taking part.</h1><p class="lead">Your responses have been saved on this device.</p>
+        <div class="score-card"><span>Your score</span><strong><span id="scoreValue">0</span>/10</strong><div class="score-track"><div id="scoreBar"></div></div><p><span id="correctValue">0</span> correct · <span id="incorrectValue">0</span> incorrect</p></div>
+        <div class="researcher-panel"><h2>Researcher tools</h2><p>Download all study sessions stored in this browser. Keep this section for the researcher, not the participant.</p><div class="researcher-actions"><button id="downloadCsv" class="secondary-button" type="button">Download CSV</button><button id="newParticipant" class="primary-button" type="button">Start next participant</button></div><p id="saveStatus" class="save-status"></p></div>
+      </section>
+    </main>
+    <footer><span>Codex Learn Research Study</span><span>Anonymous participant data only</span></footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
