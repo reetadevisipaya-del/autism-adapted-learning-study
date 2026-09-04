@@ -1,3 +1,8 @@
+// WebGazer's default relative model folder is not part of this static site.
+// Pin a cross-origin-enabled host for the MediaPipe files before begin().
+if (window.webgazer) {
+  window.webgazer.params.faceMeshSolutionPath = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619";
+}
 const lessons=[
  {title:"Recognising facial emotions",body:`<p class="lead">We can use the eyes, eyebrows and mouth as clues. Look at the whole face before choosing.</p><div class="lesson-panel"><h2>Three useful clues</h2><div class="emotion-cues"><div class="cue"><b>🙂</b><strong>Happy</strong><br><small>Smile, relaxed eyes</small></div><div class="cue"><b>☹</b><strong>Sad</strong><br><small>Downturned mouth, lowered gaze</small></div><div class="cue"><b>😮</b><strong>Surprised</strong><br><small>Raised eyebrows, wide eyes</small></div></div></div>`},
  {title:"Everyday maths",body:`<p class="lead">Read the question, notice the operation, and work one step at a time.</p><div class="lesson-panel"><h2>Example: addition</h2><div class="equation">12 + 7 = 19</div><p>Start at 12 and count forward 7. For percentages, 50% means half.</p></div>`},
