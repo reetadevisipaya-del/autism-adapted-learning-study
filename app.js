@@ -23,7 +23,7 @@ const questions=[
 const $=id=>document.getElementById(id);let state={condition:"adapted",participantId:"",lesson:0,question:0,answers:[],startedAt:0,phaseStartedAt:0,changes:0,sessionId:"",eyeTracking:false,gazeSamples:[],lastGazeAt:0};
 document.querySelectorAll('input[name="condition"]').forEach(r=>r.addEventListener("change",e=>{document.querySelectorAll(".condition-card").forEach(x=>x.classList.remove("selected"));e.target.closest(".condition-card").classList.add("selected");document.querySelectorAll(".choice-check").forEach(x=>x.textContent="Select");e.target.closest(".condition-card").querySelector(".choice-check").textContent="Selected";}));
 $("setupForm").addEventListener("submit",e=>{e.preventDefault();state.condition=document.querySelector('input[name="condition"]:checked').value;state.participantId=$("participantId").value.trim();state.startedAt=performance.now();state.phaseStartedAt=performance.now();state.sessionId=`${Date.now()}-${Math.random().toString(36).slice(2,8)}`;$("app").className=`app ${state.condition}`;$("conditionBadge").textContent=state.condition==="adapted"?"Autism-adapted interface":"Standard interface";recordEvent("session_started",{condition:state.condition,eye_tracking_requested:$("eyeTrackingConsent").checked});if($("eyeTrackingConsent").checked){$("calibrationView").classList.remove("hidden")}else beginLessons();});
-function beginLessons(){show("lessonView");$("progressShell").classList.remove("hidden");state.phaseStartedAt=performance.now();renderLesson()}
+function beginLessons(){state.setupMs=Math.round(performance.now()-state.startedAt);show("lessonView");$("stopSession").classList.remove("hidden");$("progressShell").classList.remove("hidden");state.phaseStartedAt=performance.now();renderLesson();startResearchTask('lesson',1)}
 $("skipCalibration").addEventListener("click",()=>{$("calibrationView").classList.add("hidden");recordEvent("eye_tracking_skipped",{});beginLessons()});
 $("startCalibration").addEventListener("click",async()=>{const button=$("startCalibration");let stage="Loading eye-tracking software";button.disabled=true;try{if(!window.webgazer)throw new Error("Tracker did not load");stage="Starting the camera and eye-tracking model";$("cameraStatus").textContent=stage+"…";webgazer.showVideoPreview(false);await webgazer.saveDataAcrossSessions(false).setRegression("ridge").setGazeListener(onGaze).begin();stage="Setting up camera preview";webgazer.showVideoPreview(false).showPredictionPoints(false).applyKalmanFilter(true);stage="Preparing calibration";state.eyeTracking=true;buildCalibration();$("calibrationIntro").classList.add("hidden");$("calibrationStage").classList.remove("hidden")}catch(error){state.eyeTracking=false;$("calibrationIntro").classList.remove("hidden");$("calibrationStage").classList.add("hidden");const name=error?.name||"Error",message=String(error?.message||error||"No error details supplied");$("cameraStatus").style.whiteSpace="pre-wrap";$("cameraStatus").setAttribute("role","alert");$("cameraStatus").textContent=`Eye tracking could not start.\nStep: ${stage}\nDetails: ${name}: ${message}\n\n${trackingErrorHelp(name,message)}\nYou can continue without eye tracking. Please send the researcher a screenshot of these details.`;console.error("Eye tracking startup failed:",stage,error);try{recordEvent("eye_tracking_error",{name,message,stage})}catch(logError){console.warn("Could not save diagnostic",logError)}}finally{button.disabled=false;button.textContent="Allow camera & start"}});
 function trackingErrorHelp(name,message){if(name==="NotAllowedError"||name==="SecurityError")return"The browser or system blocked access. Check this site's camera permission and your device's camera privacy settings.";if(name==="NotFoundError")return"No compatible camera was found. Check that the camera is connected and enabled.";if(name==="NotReadableError"||name==="AbortError")return"The camera could not be started. Close other video-call apps and try again.";if(name==="OverconstrainedError")return"The camera does not support the requested settings. Send the details below to the researcher.";if(/tracker did not load|fetch|network|load/i.test(message))return"Eye-tracking software or model files may not have loaded. Check your internet connection, reload the page, and try again.";return"This may be an eye-tracking software error, rather than a webcam problem. The details above will help the researcher identify it.";}
@@ -34,16 +34,28 @@ function onGaze(data){
   const view=currentView();
   if(view!=="lesson"&&view!=="quiz")return;
   const now=performance.now();if(now-state.lastGazeAt<100)return;state.lastGazeAt=now;
-  state.gazeSamples.push({t:Math.round(now-state.startedAt),x:Math.round(data.x),y:Math.round(data.y),view,q:view==="quiz"?state.question+1:null,lesson:view==="lesson"?state.lesson+1:null,width:innerWidth,height:innerHeight,scroll_x:scrollX,scroll_y:scrollY});
+  const geometry=classifyGaze(data.x,data.y,view);
+  state.gazeSamples.push({t:Math.round(now-state.startedAt),task_t:Math.round(now-state.phaseStartedAt),x:data.x,y:data.y,view,q:view==="quiz"?state.question+1:null,lesson:view==="lesson"?state.lesson+1:null,width:innerWidth,height:innerHeight,scroll_x:scrollX,scroll_y:scrollY,...geometry});
 }
 function currentView(){if(!$("quizView").classList.contains("hidden"))return"quiz";if(!$("lessonView").classList.contains("hidden"))return"lesson";return"other"}
 function gazeSummary(){const s={samples:state.gazeSamples.length,top:0,middle:0,bottom:0,offscreen:0};state.gazeSamples.forEach(g=>{const w=g.width||innerWidth,h=g.height||innerHeight;if(g.x<0||g.y<0||g.x>=w||g.y>=h)s.offscreen++;else if(g.y<h/3)s.top++;else if(g.y<h*2/3)s.middle++;else s.bottom++});return s}
-$("nextLesson").addEventListener("click",()=>{recordEvent("lesson_completed",{lesson:state.lesson+1,duration_ms:Math.round(performance.now()-state.phaseStartedAt)});state.lesson++;state.phaseStartedAt=performance.now();if(state.lesson<lessons.length)renderLesson();else{state.question=0;show("quizView");renderQuestion();}});
+$("nextLesson").addEventListener("click",()=>{endResearchTask('completed');recordEvent("lesson_completed",{lesson:state.lesson+1,duration_ms:Math.round(performance.now()-state.phaseStartedAt)});state.lesson++;state.phaseStartedAt=performance.now();if(state.lesson<lessons.length){renderLesson();startResearchTask('lesson',state.lesson+1)}else{state.question=0;show("quizView");renderQuestion();startResearchTask('quiz',1)}});
 function renderLesson(){const l=lessons[state.lesson];$("lessonKicker").textContent=`Lesson ${state.lesson+1} of 3`;$("lessonTitle").textContent=l.title;$("lessonBody").innerHTML=l.body;$("nextLesson").innerHTML=state.lesson===2?'Start the test <span aria-hidden="true">→</span>':'Next lesson <span aria-hidden="true">→</span>';setProgress((state.lesson+1)/4,`Lesson ${state.lesson+1} of 3`);focusMain();}
 function renderQuestion(){const q=questions[state.question];state.phaseStartedAt=performance.now();state.changes=0;$("subjectPill").textContent=q.subject;$("questionCount").textContent=`Question ${state.question+1} of 10`;$("questionText").textContent=q.text;$("questionVisual").innerHTML=q.image?`<img class="face-stimulus" src="${q.image}" alt="A person showing an emotion" />`:"";$("answers").innerHTML=q.options.map((o,i)=>`<label class="answer-option"><input type="radio" name="answer" value="${escapeHtml(o)}"><span>${String.fromCharCode(65+i)}. ${escapeHtml(o)}</span></label>`).join("");$("answerMessage").classList.add("hidden");$("nextQuestion").disabled=true;$("nextQuestion").innerHTML=state.question===9?'See results <span aria-hidden="true">→</span>':'Continue <span aria-hidden="true">→</span>';$("answers").addEventListener("change",chooseAnswer);renderDots();setProgress((3+((state.question+1)/10))/4,`Test · Question ${state.question+1} of 10`);focusMain();}
 function chooseAnswer(e){state.changes++;document.querySelectorAll(".answer-option").forEach(x=>x.classList.remove("selected"));e.target.closest(".answer-option").classList.add("selected");$("nextQuestion").disabled=false;const q=questions[state.question],correct=e.target.value===q.answer;$("answerMessage").textContent=correct?"Answer recorded. You can continue.":"Answer recorded. You can still continue.";$("answerMessage").classList.remove("hidden");}
-$("nextQuestion").addEventListener("click",()=>{const selected=document.querySelector('input[name="answer"]:checked');if(!selected)return;const q=questions[state.question];state.answers.push({question:state.question+1,subject:q.subject,response:selected.value,correct:selected.value===q.answer,response_ms:Math.round(performance.now()-state.phaseStartedAt),answer_changes:Math.max(0,state.changes-1)});recordEvent("answer_submitted",state.answers.at(-1));state.question++;if(state.question<questions.length)renderQuestion();else finish();});
-async function finish(){const ended=performance.now(),score=state.answers.filter(a=>a.correct).length,summary=gazeSummary();if(state.eyeTracking&&window.webgazer){webgazer.pause();$("gazeDot").classList.add("hidden")}const session={session_id:state.sessionId,participant_id:state.participantId,condition:state.condition,started_at:new Date(Date.now()-(ended-state.startedAt)).toISOString(),completed_at:new Date().toISOString(),completed:true,total_duration_ms:Math.round(ended-state.startedAt),score,incorrect:10-score,answers:state.answers,user_agent:navigator.userAgent,viewport:`${innerWidth}x${innerHeight}`,eye_tracking:state.eyeTracking,gaze_summary:summary,gaze_samples:state.gazeSamples};await saveSession(session);show("resultsView");$("progressShell").classList.add("hidden");$("scoreValue").textContent=$("correctValue").textContent=score;$("incorrectValue").textContent=10-score;$("scoreBar").style.width=`${score*10}%`;$("saveStatus").textContent=`Saved locally at ${new Date().toLocaleTimeString()}${state.eyeTracking?` · ${summary.samples} gaze samples`:""}`;focusMain();}
+$("nextQuestion").addEventListener("click",()=>{const selected=document.querySelector('input[name="answer"]:checked');if(!selected)return;const q=questions[state.question];state.answers.push({question:state.question+1,subject:q.subject,response:selected.value,correct:selected.value===q.answer,response_ms:Math.round(performance.now()-state.phaseStartedAt),answer_changes:Math.max(0,state.changes-1)});endResearchTask('completed',state.answers.at(-1));recordEvent("answer_submitted",state.answers.at(-1));state.question++;if(state.question<questions.length){renderQuestion();startResearchTask('quiz',state.question+1)}else finish();});
+async function finish(completed=true){
+  if(state.finished)return;state.finished=true;
+  if(state.activeTask)endResearchTask('stopped');
+  const session=researchSnapshot(completed?'completed':'stopped'),score=session.score;
+  if(state.eyeTracking&&window.webgazer){webgazer.pause();$("gazeDot").classList.add("hidden")}
+  $("stopSession").classList.add("hidden");show("resultsView");$("progressShell").classList.add("hidden");
+  $("scoreValue").textContent=$("correctValue").textContent=score;$("incorrectValue").textContent=session.incorrect;$("scoreBar").style.width=`${score*10}%`;
+  if(!completed){document.querySelector('#resultsView .eyebrow').textContent='Session stopped';document.querySelector('#resultsView .lead').textContent=`${state.answers.length} of 10 answers submitted. Unanswered questions are not scored as incorrect.`;}
+  try{await queueResearchSave(session);$("saveStatus").textContent='Saved on this device. Download the research Excel report below.';}
+  catch(error){$("saveStatus").textContent='Local saving failed. Download this session Excel now before leaving this page.';}
+  focusMain();
+}
 function setProgress(v,label){$("progressBar").style.width=`${Math.round(v*100)}%`;$("percentLabel").textContent=`${Math.round(v*100)}%`;$("stepLabel").textContent=label}function renderDots(){$("questionDots").className="question-dots";$("questionDots").innerHTML=questions.map((_,i)=>`<span class="dot ${i<state.question?'done':i===state.question?'current':''}">${i<state.question?'✓':i+1}</span>`).join("")}function show(id){["setupView","lessonView","quizView","resultsView"].forEach(x=>$(x).classList.toggle("hidden",x!==id))}function focusMain(){scrollTo({top:0,behavior:state.condition==="adapted"?"auto":"smooth"});$("main").focus()}function escapeHtml(s){return s.replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function db(){return new Promise((resolve,reject)=>{const r=indexedDB.open("codexLearnStudy",1);r.onupgradeneeded=()=>r.result.createObjectStore("sessions",{keyPath:"session_id"});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}async function saveSession(s){const d=await db();return new Promise((resolve,reject)=>{const t=d.transaction("sessions","readwrite");t.objectStore("sessions").put(s);t.oncomplete=resolve;t.onerror=()=>reject(t.error)})}async function allSessions(){const d=await db();return new Promise((resolve,reject)=>{const r=d.transaction("sessions").objectStore("sessions").getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}function recordEvent(type,data){const log=JSON.parse(sessionStorage.getItem("codexEvents")||"[]");log.push({session_id:state.sessionId,type,at:new Date().toISOString(),...data});sessionStorage.setItem("codexEvents",JSON.stringify(log))}
 $("downloadCsv").addEventListener("click",async()=>{const sessions=await allSessions(),rows=[["session_id","participant_id","condition","started_at","completed_at","completed","total_duration_ms","score","incorrect","question","subject","response","correct","response_ms","answer_changes","viewport","eye_tracking","gaze_samples","gaze_top","gaze_middle","gaze_bottom","gaze_offscreen"]];sessions.forEach(s=>s.answers.forEach(a=>rows.push([s.session_id,s.participant_id,s.condition,s.started_at,s.completed_at,s.completed,s.total_duration_ms,s.score,s.incorrect,a.question,a.subject,a.response,a.correct,a.response_ms,a.answer_changes,s.viewport,s.eye_tracking||false,s.gaze_summary?.samples||0,s.gaze_summary?.top||0,s.gaze_summary?.middle||0,s.gaze_summary?.bottom||0,s.gaze_summary?.offscreen||0])));const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\r\n"),url=URL.createObjectURL(new Blob([csv],{type:"text/csv"})),a=document.createElement("a");a.href=url;a.download=`adaptive-learning-study-data-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url)});$("newParticipant").addEventListener("click",()=>location.reload());$("soundToggle").addEventListener("click",e=>{const on=e.currentTarget.getAttribute("aria-pressed")==="true";e.currentTarget.setAttribute("aria-pressed",String(!on));e.currentTarget.textContent=on?"Sound off":"Sound on"});
@@ -169,10 +181,11 @@ async function buildSessionWorkbook(session,ExcelJS){
 excelButton.addEventListener("click",async()=>{
   excelButton.disabled=true;$("saveStatus").textContent="Preparing Excel report…";
   try{
-    const sessions=await allSessions(),session=sessions.find(s=>s.session_id===state.sessionId);
+    let sessions=[];try{sessions=await allSessions()}catch(error){console.warn(error)}
+    const session=state.finished?researchSnapshot(state.answers.length===10?'completed':'stopped'):sessions.find(s=>s.session_id===state.sessionId);
     if(!session)throw new Error("No saved completed session was found. Finish the test first.");
     const ExcelJS=await loadExcelLibrary();
-    const workbook=await buildSessionWorkbook(session,ExcelJS);
+    const workbook=await buildResearchWorkbook([session],ExcelJS);
     const buffer=await workbook.xlsx.writeBuffer();
     const url=URL.createObjectURL(new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
     const a=document.createElement("a");a.href=url;
@@ -183,3 +196,91 @@ excelButton.addEventListener("click",async()=>{
   }catch(error){$("saveStatus").textContent=`Excel download failed: ${error.message||error}`;}
   finally{excelButton.disabled=false;}
 });
+
+// Research recording. These controls are common to both interface conditions.
+function syncResearchCondition(){
+  const order=$('studyOrder').value,period=Number($('studyPeriod').value);
+  if(!['AS','SA'].includes(order))return;
+  const condition=order[period-1]==='A'?'adapted':'standard';
+  document.querySelectorAll('input[name="condition"]').forEach(r=>{
+    r.checked=r.value===condition;r.closest('.condition-card').classList.toggle('selected',r.checked);
+    r.closest('.condition-card').querySelector('.choice-check').textContent=r.checked?'Assigned':'Not this session';
+  });
+}
+['studyOrder','studyPeriod'].forEach(id=>$(id).addEventListener('change',syncResearchCondition));
+$('setupForm').addEventListener('submit',()=>{
+  syncResearchCondition();state.orderGroup=$('studyOrder').value;state.period=Number($('studyPeriod').value);state.studyStage=$('studyStage').value;
+  state.tasks=[];state.finished=false;state.startedUtc=new Date().toISOString();state.recordingVisible=!document.hidden;
+  setTimeout(()=>{if(state.sessionId&&!state.finished){$('conditionBadge').textContent=state.condition==='adapted'?'Interface 1':'Interface 2';checkpointResearch();}},0);
+},true);
+function classifyGaze(x,y,view){
+  const selectors=view==='quiz'?
+    [['question','#questionText'],['face_image','#questionVisual img'],['answers','#answers'],['navigation','#nextQuestion'],['progress','#progressShell'],['progress','.question-map'],['feedback','#answerMessage']]:
+    [['question','#lessonTitle'],['navigation','#nextLesson'],['lesson_content','#lessonBody'],['progress','#progressShell']];
+  const regions=[];
+  selectors.forEach(([name,selector])=>{
+    const el=document.querySelector(selector);if(!el||el.closest('.hidden'))return;
+    const style=getComputedStyle(el);if(style.display==='none'||style.visibility==='hidden')return;
+    const r=el.getBoundingClientRect();
+    const left=Math.max(0,r.left),top=Math.max(0,r.top),right=Math.min(innerWidth,r.right),bottom=Math.min(innerHeight,r.bottom);
+    if(right>left&&bottom>top)regions.push({name,left,top,right,bottom});
+  });
+  const off=x<0||y<0||x>=innerWidth||y>=innerHeight;
+  const hit=off?null:regions.find(r=>x>=r.left&&x<r.right&&y>=r.top&&y<r.bottom);
+  return {aoi_version:ResearchStudy.version,aoi:off?'offscreen':hit?.name||'other_screen',available_aois:[...new Set(regions.map(r=>r.name))],aoi_bounds:hit?[hit.left,hit.top,hit.right-hit.left,hit.bottom-hit.top]:null};
+}
+function startResearchTask(phase,number){
+  const now=performance.now();state.phaseStartedAt=now;
+  state.activeTask={phase,number,subject:phase==='quiz'?questions[number-1].subject:['Faces','Maths','English'][number-1],status:'in_progress',start:now,visible_ms:0,visibleSince:document.hidden?null:now};
+  checkpointResearch();
+}
+function taskSnapshot(){const t=state.activeTask;if(!t)return null;const now=performance.now();return {phase:t.phase,number:t.number,subject:t.subject,status:t.status,elapsed_ms:Math.round(now-t.start),visible_ms:Math.round(t.visible_ms+(t.visibleSince==null?0:now-t.visibleSince))};}
+function endResearchTask(status,answer){const t=taskSnapshot();if(!t)return;t.status=status;if(answer)Object.assign(t,{response:answer.response,correct:answer.correct,answer_changes:answer.answer_changes});(state.tasks??=[]).push(t);state.activeTask=null;}
+document.addEventListener('visibilitychange',()=>{
+  const t=state.activeTask;if(t){const now=performance.now();if(document.hidden&&t.visibleSince!=null){t.visible_ms+=now-t.visibleSince;t.visibleSince=null}else if(!document.hidden)t.visibleSince=now;}
+  checkpointResearch();
+});
+function researchSnapshot(status='checkpoint'){
+  const tasks=[...(state.tasks||[])],active=taskSnapshot();if(active)tasks.push(active);
+  ['lesson','quiz'].forEach(phase=>{const count=phase==='lesson'?3:10;for(let number=1;number<=count;number++)if(!tasks.some(t=>t.phase===phase&&t.number===number))tasks.push({phase,number,subject:phase==='quiz'?questions[number-1].subject:['Faces','Maths','English'][number-1],status:'not_started',elapsed_ms:null,visible_ms:null});});
+  const answered=state.answers||[],score=answered.filter(a=>a.correct).length;
+  if(status!=='checkpoint')state.endedUtc??=new Date().toISOString();
+  const ended=state.endedUtc||new Date().toISOString();
+  return {session_id:state.sessionId,participant_id:state.participantId,condition:state.condition,order_group:state.orderGroup,period:state.period,study_stage:state.studyStage,
+    schema_version:ResearchStudy.version,session_status:status,completed:status==='completed',started_at:state.startedUtc,completed_at:status==='checkpoint'?null:ended,last_saved_at:new Date().toISOString(),
+    total_duration_ms:state.startedUtc?new Date(ended)-new Date(state.startedUtc):null,setup_ms:state.setupMs??null,score,incorrect:answered.length-score,answers:answered,tasks,
+    user_agent:navigator.userAgent,viewport:`${innerWidth}x${innerHeight}`,eye_tracking:state.eyeTracking,gaze_summary:gazeSummary(),gaze_samples:state.gazeSamples};
+}
+let researchSaveQueue=Promise.resolve();
+function queueResearchSave(session){const snapshot=JSON.parse(JSON.stringify(session));researchSaveQueue=researchSaveQueue.catch(()=>{}).then(()=>saveSession(snapshot));return researchSaveQueue;}
+function checkpointResearch(){if(!state.sessionId||state.finished)return;queueResearchSave(researchSnapshot()).catch(error=>console.warn('Research checkpoint failed',error));}
+setInterval(checkpointResearch,5000);
+$('stopSession').addEventListener('click',()=>{if(confirm('Stop this session? Your submitted answers will be saved.'))finish(false)});
+
+const allExcelButton=document.createElement('button');allExcelButton.type='button';allExcelButton.className='secondary-button';allExcelButton.textContent='Download all local sessions Excel';
+$('downloadCsv').parentElement.appendChild(allExcelButton);
+allExcelButton.addEventListener('click',async()=>{
+  allExcelButton.disabled=true;$('saveStatus').textContent='Preparing all local sessions…';
+  try{const sessions=await allSessions();if(!sessions.length)throw new Error('No saved sessions in this browser.');const book=await buildResearchWorkbook(sessions,await loadExcelLibrary());
+    const url=URL.createObjectURL(new Blob([await book.xlsx.writeBuffer()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const link=document.createElement('a');link.href=url;link.download='learning-study-all-local-sessions.xlsx';link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);$('saveStatus').textContent='Research Excel download started. Includes only sessions saved in this browser.';
+  }catch(error){$('saveStatus').textContent=`Excel download failed: ${error.message}`;}finally{allExcelButton.disabled=false;}
+});
+async function buildResearchWorkbook(sessions,ExcelJS){
+  const book=new ExcelJS.Workbook();book.creator='Adaptive Learning Study';
+  book.calcProperties.fullCalcOnLoad=true;
+  ResearchStudy.tables(sessions).forEach(spec=>{
+    const rows=spec.rows.length?spec.rows:[spec.headers.map(()=>null)];const sheet=excelTable(book,spec.name,spec.headers,rows,spec.widths);
+    sheet.getRow(1).height=48;sheet.eachRow((row,n)=>{if(n>1){row.alignment={vertical:'top',wrapText:true};row.height=30;}});
+    if(spec.name==='Read me'){sheet.getColumn(2).width=110;sheet.eachRow((r,n)=>{if(n>1)r.height=48});}
+    if(spec.name==='Variable guide')sheet.eachRow((r,n)=>{if(n>1)r.height=58});
+    Object.entries(spec.formulas||{}).forEach(([col,fn])=>rows.forEach((row,i)=>{sheet.getCell(i+2,Number(col)+1).value={formula:fn(i+2)};}));
+    (spec.percent||[]).forEach(col=>sheet.getColumn(col+1).numFmt='0.0%');
+    spec.manual.forEach(col=>{for(let row=2;row<=rows.length+1;row++)sheet.getCell(row,col+1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1CC'}};});
+  });
+  const diagrams=book.addWorksheet('Gaze diagrams');diagrams.getColumn(1).width=145;
+  sessions.forEach((session,i)=>{
+    const row=1+i*32;diagrams.getCell(row,1).value=`${session.participant_id} | ${session.condition} | ${session.session_id}`;diagrams.getCell(row,1).font={bold:true,size:14};
+    const image=book.addImage({base64:gazeDensityImage(ResearchStudy.samples(session)),extension:'png'});diagrams.addImage(image,{tl:{col:0,row:row+1},ext:{width:960,height:544}});
+  });
+  return book;
+}

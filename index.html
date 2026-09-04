@@ -6,6 +6,7 @@
   <meta name="description" content="A comparative educational interface study." />
   <title>Adaptive Learning Study</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>.field select{font:inherit;font-size:1rem;padding:.75rem;border:1px solid #879b94;border-radius:.5rem;background:#fff;color:#17352f;width:100%}</style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -18,15 +19,21 @@
     <main id="main" tabindex="-1">
       <section id="setupView" class="view setup-view">
         <div class="eyebrow">Educational interface study</div>
-        <h1>Choose how you would like to learn.</h1>
+        <h1>Get ready to learn.</h1>
         <p class="lead">You will read three short lessons, then answer 10 easy questions. You can continue after any answer.</p>
         <div class="notice"><strong>Before you begin</strong><span>This activity takes about 8–10 minutes. Your answers and completion times are recorded for research.</span></div>
         <form id="setupForm">
-          <label class="field"><span>Participant ID <small>(do not enter a name)</small></span><input id="participantId" maxlength="24" required placeholder="Example: P014" autocomplete="off" /></label>
-          <fieldset><legend>Select one interface</legend>
+          <label class="field"><span>Participant ID <small>(do not enter a name)</small></span><input id="participantId" maxlength="24" pattern="[A-Za-z0-9_-]+" title="Use an anonymous code with letters, numbers, underscores or hyphens." required placeholder="Example: P014" autocomplete="off" /></label>
+          <fieldset><legend>Researcher session setup</legend>
+            <p>Use the assigned order from your study schedule and the same participant ID for both sessions.</p>
+            <label class="field"><span>Assigned order</span><select id="studyOrder" required><option value="">Select assigned order</option><option value="AS">Interface 1 then Interface 2</option><option value="SA">Interface 2 then Interface 1</option></select></label>
+            <label class="field"><span>Session</span><select id="studyPeriod"><option value="1">Session 1</option><option value="2">Session 2</option></select></label>
+            <label class="field"><span>Study stage</span><select id="studyStage"><option value="pilot">Pilot</option><option value="main">Main study</option></select></label>
+          </fieldset>
+          <fieldset><legend>Assigned interface</legend>
             <div class="condition-grid">
-              <label class="condition-card selected"><input type="radio" name="condition" value="adapted" checked /><span class="choice-title"><span class="choice-icon calm">A</span>Autism-adapted</span><span>Calm colours, predictable layout, clear steps, reduced distraction and optional sound.</span><span class="choice-check">Selected</span></label>
-              <label class="condition-card"><input type="radio" name="condition" value="standard" /><span class="choice-title"><span class="choice-icon vivid">S</span>Standard</span><span>A conventional, visually busy learning interface with the same lessons and questions.</span><span class="choice-check">Select</span></label>
+              <label class="condition-card selected"><input type="radio" name="condition" value="adapted" checked disabled /><span class="choice-title">Interface 1</span><span>The researcher assigns the interface for this session.</span><span class="choice-check">Selected</span></label>
+              <label class="condition-card"><input type="radio" name="condition" value="standard" disabled /><span class="choice-title">Interface 2</span><span>The researcher assigns the interface for this session.</span><span class="choice-check">Select</span></label>
             </div>
           </fieldset>
           <label class="consent"><input id="consent" type="checkbox" required /><span>I understand that anonymous study activity data will be recorded and I agree to continue.</span></label>
@@ -58,6 +65,7 @@
         </div>
       </section>
 
+      <button id="stopSession" class="text-button hidden" type="button">Stop this session</button>
       <section id="resultsView" class="view results-view hidden" aria-live="polite">
         <div class="result-icon">✓</div><div class="eyebrow">Activity complete</div><h1>Thank you for taking part.</h1><p class="lead">Your responses have been saved on this device.</p>
         <div class="score-card"><span>Your score</span><strong><span id="scoreValue">0</span>/10</strong><div class="score-track"><div id="scoreBar"></div></div><p><span id="correctValue">0</span> correct · <span id="incorrectValue">0</span> incorrect</p></div>
@@ -72,6 +80,7 @@
     <footer><span>Adaptive Learning Research Study</span><span>Anonymous participant data only</span></footer>
   </div>
   <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+  <script src="research-export.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
