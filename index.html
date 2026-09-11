@@ -6,40 +6,107 @@
   <meta name="description" content="A comparative educational interface study." />
   <title>Adaptive Learning Study</title>
   <link rel="stylesheet" href="styles.css" />
-  <style>.field select{font:inherit;font-size:1rem;padding:.75rem;border:1px solid #879b94;border-radius:.5rem;background:#fff;color:#17352f;width:100%}</style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
-  <div id="app" class="app adapted">
-    <header class="site-header">
-      <a class="brand" href="#" aria-label="Adaptive Learning Study home"><span class="brand-mark">A</span><span>ADAPTIVE <b>LEARNING STUDY</b></span></a>
-      <div class="header-meta"><span id="conditionBadge">Study setup</span><button id="soundToggle" class="icon-button" type="button" aria-pressed="false">Sound off</button></div>
+  <div id="app" class="app researcher-mode">
+    <header class="site-header researcher-header">
+      <a class="brand" href="#" aria-label="Adaptive Learning Study home">
+        <span class="brand-mark">A</span>
+        <span>ADAPTIVE <b>LEARNING STUDY</b></span>
+      </a>
+      <div class="header-meta">
+        <span class="build-stamp">Expert Validation Build EV-1.0</span>
+      </div>
     </header>
-    <div id="progressShell" class="progress-shell hidden" aria-label="Study progress"><div><span id="stepLabel">Step 1 of 4</span><span id="percentLabel">25%</span></div><div class="progress-track"><div id="progressBar"></div></div></div>
+
+    <div id="progressShell" class="progress-shell hidden" aria-label="Study progress">
+      <div><span id="stepLabel">Step 1</span><span id="percentLabel">0%</span></div>
+      <div class="progress-track"><div id="progressBar"></div></div>
+    </div>
+
     <main id="main" tabindex="-1">
-      <section id="setupView" class="view setup-view">
-        <div class="eyebrow">Educational interface study</div>
-        <h1>Get ready to learn.</h1>
-        <p class="lead">You will read three short lessons, then answer 10 easy questions. You can continue after any answer.</p>
-        <div class="notice"><strong>Before you begin</strong><span>This activity takes about 8–10 minutes. Your answers and completion times are recorded for research.</span></div>
-        <form id="setupForm">
-          <label class="field"><span>Participant ID <small>(do not enter a name)</small></span><input id="participantId" maxlength="24" pattern="[A-Za-z0-9_-]+" title="Use an anonymous code with letters, numbers, underscores or hyphens." required placeholder="Example: P014" autocomplete="off" /></label>
-          <fieldset><legend>Researcher session setup</legend>
-            <p>Use the assigned order from your study schedule and the same participant ID for both sessions.</p>
-            <label class="field"><span>Assigned order</span><select id="studyOrder" required><option value="">Select assigned order</option><option value="AS">Interface 1 then Interface 2</option><option value="SA">Interface 2 then Interface 1</option></select></label>
-            <label class="field"><span>Session</span><select id="studyPeriod"><option value="1">Session 1</option><option value="2">Session 2</option></select></label>
-            <label class="field"><span>Study stage</span><select id="studyStage"><option value="pilot">Pilot</option><option value="main">Main study</option></select></label>
-          </fieldset>
-          <fieldset><legend>Assigned interface</legend>
-            <div class="condition-grid">
-              <label class="condition-card selected"><input type="radio" name="condition" value="adapted" checked disabled /><span class="choice-title">Interface 1</span><span>The researcher assigns the interface for this session.</span><span class="choice-check">Selected</span></label>
-              <label class="condition-card"><input type="radio" name="condition" value="standard" disabled /><span class="choice-title">Interface 2</span><span>The researcher assigns the interface for this session.</span><span class="choice-check">Select</span></label>
+      <section id="researcherView" class="view researcher-console">
+        <div class="console-heading">
+          <div>
+            <div class="eyebrow">Researcher console</div>
+            <h1>Prepare participant session</h1>
+            <p class="lead">Configure the assigned condition before handing the study computer to the participant.</p>
+          </div>
+          <span class="researcher-badge">RESEARCHER ONLY</span>
+        </div>
+
+        <form id="setupForm" class="researcher-form">
+          <div class="form-grid">
+            <label class="field">
+              <span>Participant ID <small>(anonymous code only)</small></span>
+              <input id="participantId" maxlength="24" pattern="[A-Za-z0-9_-]+" required placeholder="Example: P014" autocomplete="off" />
+            </label>
+
+            <label class="field">
+              <span>Assigned order</span>
+              <select id="studyOrder" required>
+                <option value="">Select order</option>
+                <option value="AS">Conventional → Autism-adapted</option>
+                <option value="SA">Autism-adapted → Conventional</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Session</span>
+              <select id="studyPeriod">
+                <option value="1">Session 1</option>
+                <option value="2">Session 2</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Study stage</span>
+              <select id="studyStage">
+                <option value="pilot">Pilot</option>
+                <option value="main">Main study</option>
+              </select>
+            </label>
+          </div>
+
+          <fieldset class="console-fieldset">
+            <legend>Assigned interface</legend>
+            <div class="condition-grid researcher-condition-grid">
+              <label class="condition-card">
+                <input type="radio" name="condition" value="standard" checked />
+                <span class="choice-title">Conventional interface</span>
+                <span>Professional baseline educational interface.</span>
+              </label>
+              <label class="condition-card">
+                <input type="radio" name="condition" value="adapted" />
+                <span class="choice-title">Autism-adapted interface</span>
+                <span>Same learning content with predefined autism-specific UI adaptations.</span>
+              </label>
             </div>
           </fieldset>
-          <label class="consent"><input id="consent" type="checkbox" required /><span>I understand that anonymous study activity data will be recorded and I agree to continue.</span></label>
-          <label class="consent eye-consent"><input id="eyeTrackingConsent" type="checkbox" /><span><strong>Enable visual eye tracking (optional).</strong> This uses the webcam to estimate where I look. Video is processed on this device and is not saved or uploaded.</span></label>
-          <button class="primary-button" type="submit">Begin lessons <span aria-hidden="true">→</span></button>
+
+          <label class="toggle-row">
+            <input id="eyeTrackingConsent" type="checkbox" checked />
+            <span><strong>Enable WebGazer for this session</strong><small>Use only when webcam-based gaze estimation is included in the approved protocol.</small></span>
+          </label>
+
+          <button class="primary-button launch-button" type="submit">Launch participant mode <span aria-hidden="true">→</span></button>
         </form>
+      </section>
+
+      <section id="participantIntroView" class="view participant-view hidden" aria-live="polite">
+        <div class="participant-shell">
+          <div class="eyebrow">Learning activity</div>
+          <h1>Welcome.</h1>
+          <p class="lead">You will complete a short learning activity.</p>
+          <div class="participant-steps">
+            <div><span>01</span><p>Look at some dots on the screen.</p></div>
+            <div><span>02</span><p>Read three short lessons.</p></div>
+            <div><span>03</span><p>Answer ten questions.</p></div>
+          </div>
+          <p class="quiet-hint">You can ask the researcher for a break at any time.</p>
+          <button id="participantStart" class="primary-button" type="button">Start <span aria-hidden="true">→</span></button>
+        </div>
       </section>
 
       <section id="lessonView" class="view hidden" aria-live="polite">
@@ -47,38 +114,98 @@
           <div class="lesson-kicker" id="lessonKicker">Lesson 1 of 3</div>
           <h1 id="lessonTitle"></h1>
           <div id="lessonBody"></div>
-          <div class="lesson-actions"><span class="quiet-hint">Take your time. There is no countdown.</span><button id="nextLesson" class="primary-button" type="button">Next lesson <span aria-hidden="true">→</span></button></div>
+          <div class="lesson-actions">
+            <span class="quiet-hint">Take your time. There is no countdown.</span>
+            <button id="nextLesson" class="primary-button" type="button">Next lesson <span aria-hidden="true">→</span></button>
+          </div>
         </div>
       </section>
 
       <section id="quizView" class="view hidden" aria-live="polite">
         <div class="quiz-layout">
-          <aside class="question-map" aria-label="Question progress"><h2>Your progress</h2><div id="questionDots"></div><p>One question at a time</p></aside>
+          <aside class="question-map" aria-label="Question progress">
+            <h2>Your progress</h2>
+            <div id="questionDots"></div>
+            <p>One question at a time</p>
+          </aside>
           <div class="content-card question-card">
             <div class="question-meta"><span id="subjectPill">Maths</span><span id="questionCount">Question 1 of 10</span></div>
             <h1 id="questionText"></h1>
             <div id="questionVisual"></div>
             <fieldset id="answers"><legend class="sr-only">Choose one answer</legend></fieldset>
             <div id="answerMessage" class="answer-message hidden" role="status"></div>
-            <button id="nextQuestion" class="primary-button" type="button" disabled>Continue <span aria-hidden="true">→</span></button>
+            <button id="nextQuestion" class="primary-button" type="button" disabled>Next question <span aria-hidden="true">→</span></button>
           </div>
         </div>
       </section>
 
-      <button id="stopSession" class="text-button hidden" type="button">Stop this session</button>
-      <section id="resultsView" class="view results-view hidden" aria-live="polite">
-        <div class="result-icon">✓</div><div class="eyebrow">Activity complete</div><h1>Thank you for taking part.</h1><p class="lead">Your responses have been saved on this device.</p>
-        <div class="score-card"><span>Your score</span><strong><span id="scoreValue">0</span>/10</strong><div class="score-track"><div id="scoreBar"></div></div><p><span id="correctValue">0</span> correct · <span id="incorrectValue">0</span> incorrect</p></div>
-        <div class="researcher-panel"><h2>Researcher tools</h2><p>Download all study sessions stored in this browser. Keep this section for the researcher, not the participant.</p><div class="researcher-actions"><button id="downloadCsv" class="secondary-button" type="button">Download CSV</button><button id="newParticipant" class="primary-button" type="button">Start next participant</button></div><p id="saveStatus" class="save-status"></p></div>
+      <section id="completionView" class="view participant-view hidden" aria-live="polite">
+        <div class="participant-shell completion-shell">
+          <div class="result-icon">✓</div>
+          <div class="eyebrow">Activity complete</div>
+          <h1>Thank you for taking part.</h1>
+          <p class="lead">Please tell the researcher that you have finished.</p>
+        </div>
       </section>
+
+      <section id="researcherResultsView" class="view researcher-console hidden">
+        <div class="console-heading">
+          <div>
+            <div class="eyebrow">Researcher results</div>
+            <h1>Session complete</h1>
+          </div>
+          <span class="researcher-badge">RESEARCHER ONLY</span>
+        </div>
+        <div id="researcherSummary" class="summary-grid"></div>
+        <div class="researcher-actions">
+          <button id="downloadCsv" class="secondary-button" type="button">Download research data</button>
+          <button id="newParticipant" class="primary-button" type="button">Return to researcher console</button>
+        </div>
+        <p id="saveStatus" class="save-status"></p>
+      </section>
+
+      <button id="pauseSession" class="text-button participant-control hidden" type="button">Pause for a break</button>
+      <button id="stopSession" class="text-button hidden" type="button">Stop this session</button>
     </main>
+
     <div id="calibrationView" class="calibration-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="calibrationTitle">
-      <div id="calibrationIntro" class="calibration-card"><div class="eyebrow">Optional eye tracking</div><h1 id="calibrationTitle">Calibrate your gaze</h1><p>Allow camera access, sit comfortably, and keep your head still. You will click nine dots three times each while looking directly at them.</p><div class="privacy-note"><strong>Your privacy</strong><span>Webcam images stay in this browser. Only estimated screen coordinates and timestamps are recorded.</span></div><button id="startCalibration" class="primary-button" type="button">Allow camera & start</button><button id="skipCalibration" class="text-button" type="button">Continue without eye tracking</button><p id="cameraStatus" role="status"></p></div>
-      <div id="calibrationStage" class="calibration-stage hidden"><div class="calibration-instruction">Look at each dot and click it 3 times · <span id="calibrationProgress">0/27</span></div><div id="calibrationPoints"></div></div>
+      <div id="calibrationIntro" class="calibration-card">
+        <div class="eyebrow">Eye-tracking setup · 1 of 3</div>
+        <h1 id="calibrationTitle">Get comfortable</h1>
+        <p>Please sit comfortably in front of the screen. Keep your face visible to the camera and try to stay in roughly the same position.</p>
+        <div class="privacy-note">
+          <strong>Camera use</strong>
+          <span>Your camera image is used for gaze estimation according to the approved study protocol.</span>
+        </div>
+        <button id="startCalibration" class="primary-button" type="button">Continue to calibration</button>
+        <p id="cameraStatus" role="status"></p>
+      </div>
+
+      <div id="calibrationStage" class="calibration-stage hidden">
+        <div class="calibration-instruction">Look directly at each dot and click it three times · <span id="calibrationProgress">0/27</span></div>
+        <div id="calibrationPoints"></div>
+      </div>
+
+      <div id="validationStage" class="calibration-stage validation-stage hidden">
+        <div class="calibration-instruction">Checking calibration · look at each dot without clicking</div>
+        <div id="validationTarget" class="validation-target hidden" aria-hidden="true"></div>
+        <div id="validationMessage" class="calibration-card hidden">
+          <h2 id="validationHeading">You're ready.</h2>
+          <p id="validationText">The activity will begin now.</p>
+          <button id="continueAfterValidation" class="primary-button" type="button">Start activity</button>
+          <button id="retryCalibration" class="secondary-button hidden" type="button">Calibrate again</button>
+        </div>
+      </div>
     </div>
+
     <div id="gazeDot" class="gaze-dot hidden" aria-hidden="true"></div>
-    <footer><span>Adaptive Learning Research Study</span><span>Anonymous participant data only</span></footer>
+
+    <footer>
+      <span>Adaptive Learning Research Study</span>
+      <span>Expert Validation Build EV-1.0</span>
+    </footer>
   </div>
+
   <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
   <script src="research-export.js"></script>
   <script src="app.js"></script>

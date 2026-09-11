@@ -1,286 +1,554 @@
-// WebGazer's default relative model folder is not part of this static site.
-// Pin a cross-origin-enabled host for the MediaPipe files before begin().
 if (window.webgazer) {
   window.webgazer.params.faceMeshSolutionPath = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619";
 }
-const lessons=[
- {title:"Recognising facial emotions",body:`<p class="lead">We can use the eyes, eyebrows and mouth as clues. Look at the whole face before choosing.</p><div class="lesson-panel"><h2>Three useful clues</h2><div class="emotion-cues"><div class="cue"><b>🙂</b><strong>Happy</strong><br><small>Smile, relaxed eyes</small></div><div class="cue"><b>☹</b><strong>Sad</strong><br><small>Downturned mouth, lowered gaze</small></div><div class="cue"><b>😮</b><strong>Surprised</strong><br><small>Raised eyebrows, wide eyes</small></div></div></div>`},
- {title:"Everyday maths",body:`<p class="lead">Read the question, notice the operation, and work one step at a time.</p><div class="lesson-panel"><h2>Example: addition</h2><div class="equation">12 + 7 = 19</div><p>Start at 12 and count forward 7. For percentages, 50% means half.</p></div>`},
- {title:"Clear English",body:`<p class="lead">A sentence shares a complete idea. Context clues help us understand unfamiliar words.</p><div class="lesson-panel"><h2>Example</h2><div class="example-sentence">“Mira carried an umbrella because the sky was dark.”</div><p>The word <strong>because</strong> gives a reason. A synonym is a word with the same or a similar meaning.</p></div>`}
+
+const BUILD = "EV-1.0";
+const SCHEMA = "2.0";
+const $ = (id) => document.getElementById(id);
+
+const lessons = [
+  { title: "Recognising facial emotions", body: `<p class="lead">We can use the eyes, eyebrows and mouth as clues. Look at the whole face before choosing.</p><div class="lesson-panel"><h2>Three useful clues</h2><div class="emotion-cues"><div class="cue"><b>🙂</b><strong>Happy</strong><br><small>Smile, relaxed eyes</small></div><div class="cue"><b>☹</b><strong>Sad</strong><br><small>Downturned mouth, lowered gaze</small></div><div class="cue"><b>😮</b><strong>Surprised</strong><br><small>Raised eyebrows, wide eyes</small></div></div></div>` },
+  { title: "Everyday maths", body: `<p class="lead">Read the question, notice the operation, and work one step at a time.</p><div class="lesson-panel"><h2>Example: addition</h2><div class="equation">12 + 7 = 19</div><p>Start at 12 and count forward 7. For percentages, 50% means half.</p></div>` },
+  { title: "Clear English", body: `<p class="lead">A sentence shares a complete idea. Context clues help us understand unfamiliar words.</p><div class="lesson-panel"><h2>Example</h2><div class="example-sentence">“Mira carried an umbrella because the sky was dark.”</div><p>The word <strong>because</strong> gives a reason. A synonym is a word with the same or a similar meaning.</p></div>` }
 ];
-const questions=[
- {subject:"Faces",text:"What emotion is this person showing?",image:"happy.png",options:["Happy","Angry","Confused"],answer:"Happy"},
- {subject:"Maths",text:"What is 12 + 7?",options:["17","19","21"],answer:"19"},
- {subject:"English",text:"Choose the word that means the same as ‘quick’.",options:["Slow","Fast","Quiet"],answer:"Fast"},
- {subject:"Faces",text:"What emotion is this person showing?",image:"sad.png",options:["Excited","Sad","Surprised"],answer:"Sad"},
- {subject:"Maths",text:"What is 20 − 8?",options:["10","12","14"],answer:"12"},
- {subject:"English",text:"Which sentence is complete?",options:["Under the table.","The dog slept under the table.","Because the dog."],answer:"The dog slept under the table."},
- {subject:"Faces",text:"What emotion is this person showing?",image:"surprised.png",options:["Surprised","Bored","Sad"],answer:"Surprised"},
- {subject:"Maths",text:"What is half of 18?",options:["6","8","9"],answer:"9"},
- {subject:"English",text:"Which word best completes the sentence: ‘The sun is very ___.’",options:["bright","quietly","jump"],answer:"bright"},
- {subject:"Maths",text:"A notebook costs ₹40. How much do two notebooks cost?",options:["₹60","₹80","₹90"],answer:"₹80"}
+
+const questions = [
+  { subject: "Faces", text: "What emotion is this person showing?", image: "happy.png", options: ["Happy", "Angry", "Confused"], answer: "Happy" },
+  { subject: "Maths", text: "What is 12 + 7?", options: ["17", "19", "21"], answer: "19" },
+  { subject: "English", text: "Choose the word that means the same as ‘quick’.", options: ["Slow", "Fast", "Quiet"], answer: "Fast" },
+  { subject: "Faces", text: "What emotion is this person showing?", image: "sad.png", options: ["Excited", "Sad", "Surprised"], answer: "Sad" },
+  { subject: "Maths", text: "What is 20 − 8?", options: ["10", "12", "14"], answer: "12" },
+  { subject: "English", text: "Which sentence is complete?", options: ["Under the table.", "The dog slept under the table.", "Because the dog."], answer: "The dog slept under the table." },
+  { subject: "Faces", text: "What emotion is this person showing?", image: "surprised.png", options: ["Surprised", "Bored", "Sad"], answer: "Surprised" },
+  { subject: "Maths", text: "What is half of 18?", options: ["6", "8", "9"], answer: "9" },
+  { subject: "English", text: "Which word best completes the sentence: ‘The sun is very ___.’", options: ["bright", "quietly", "jump"], answer: "bright" },
+  { subject: "Maths", text: "A notebook costs ₹40. How much do two notebooks cost?", options: ["₹60", "₹80", "₹90"], answer: "₹80" }
 ];
-const $=id=>document.getElementById(id);let state={condition:"adapted",participantId:"",lesson:0,question:0,answers:[],startedAt:0,phaseStartedAt:0,changes:0,sessionId:"",eyeTracking:false,gazeSamples:[],lastGazeAt:0};
-document.querySelectorAll('input[name="condition"]').forEach(r=>r.addEventListener("change",e=>{document.querySelectorAll(".condition-card").forEach(x=>x.classList.remove("selected"));e.target.closest(".condition-card").classList.add("selected");document.querySelectorAll(".choice-check").forEach(x=>x.textContent="Select");e.target.closest(".condition-card").querySelector(".choice-check").textContent="Selected";}));
-$("setupForm").addEventListener("submit",e=>{e.preventDefault();state.condition=document.querySelector('input[name="condition"]:checked').value;state.participantId=$("participantId").value.trim();state.startedAt=performance.now();state.phaseStartedAt=performance.now();state.sessionId=`${Date.now()}-${Math.random().toString(36).slice(2,8)}`;$("app").className=`app ${state.condition}`;$("conditionBadge").textContent=state.condition==="adapted"?"Autism-adapted interface":"Standard interface";recordEvent("session_started",{condition:state.condition,eye_tracking_requested:$("eyeTrackingConsent").checked});if($("eyeTrackingConsent").checked){$("calibrationView").classList.remove("hidden")}else beginLessons();});
-function beginLessons(){state.setupMs=Math.round(performance.now()-state.startedAt);show("lessonView");$("stopSession").classList.remove("hidden");$("progressShell").classList.remove("hidden");state.phaseStartedAt=performance.now();renderLesson();startResearchTask('lesson',1)}
-$("skipCalibration").addEventListener("click",()=>{$("calibrationView").classList.add("hidden");recordEvent("eye_tracking_skipped",{});beginLessons()});
-$("startCalibration").addEventListener("click",async()=>{const button=$("startCalibration");let stage="Loading eye-tracking software";button.disabled=true;try{if(!window.webgazer)throw new Error("Tracker did not load");stage="Starting the camera and eye-tracking model";$("cameraStatus").textContent=stage+"…";webgazer.showVideoPreview(false);await webgazer.saveDataAcrossSessions(false).setRegression("ridge").setGazeListener(onGaze).begin();stage="Setting up camera preview";webgazer.showVideoPreview(false).showPredictionPoints(false).applyKalmanFilter(true);stage="Preparing calibration";state.eyeTracking=true;buildCalibration();$("calibrationIntro").classList.add("hidden");$("calibrationStage").classList.remove("hidden")}catch(error){state.eyeTracking=false;$("calibrationIntro").classList.remove("hidden");$("calibrationStage").classList.add("hidden");const name=error?.name||"Error",message=String(error?.message||error||"No error details supplied");$("cameraStatus").style.whiteSpace="pre-wrap";$("cameraStatus").setAttribute("role","alert");$("cameraStatus").textContent=`Eye tracking could not start.\nStep: ${stage}\nDetails: ${name}: ${message}\n\n${trackingErrorHelp(name,message)}\nYou can continue without eye tracking. Please send the researcher a screenshot of these details.`;console.error("Eye tracking startup failed:",stage,error);try{recordEvent("eye_tracking_error",{name,message,stage})}catch(logError){console.warn("Could not save diagnostic",logError)}}finally{button.disabled=false;button.textContent="Allow camera & start"}});
-function trackingErrorHelp(name,message){if(name==="NotAllowedError"||name==="SecurityError")return"The browser or system blocked access. Check this site's camera permission and your device's camera privacy settings.";if(name==="NotFoundError")return"No compatible camera was found. Check that the camera is connected and enabled.";if(name==="NotReadableError"||name==="AbortError")return"The camera could not be started. Close other video-call apps and try again.";if(name==="OverconstrainedError")return"The camera does not support the requested settings. Send the details below to the researcher.";if(/tracker did not load|fetch|network|load/i.test(message))return"Eye-tracking software or model files may not have loaded. Check your internet connection, reload the page, and try again.";return"This may be an eye-tracking software error, rather than a webcam problem. The details above will help the researcher identify it.";}
-function buildCalibration(){const positions=[[8,10],[50,10],[92,10],[8,50],[50,50],[92,50],[8,90],[50,90],[92,90]];let total=0;$("calibrationPoints").innerHTML=positions.map((p,i)=>`<button class="calibration-point" data-count="0" data-index="${i}" aria-label="Calibration point ${i+1}" style="left:${p[0]}%;top:${p[1]}%"></button>`).join("");$("calibrationPoints").addEventListener("click",e=>{const b=e.target.closest(".calibration-point");if(!b)return;const n=Number(b.dataset.count)+1;b.dataset.count=n;total++;b.style.transform=`translate(-50%,-50%) scale(${1+n*.12})`;if(n===3)b.classList.add("done");$("calibrationProgress").textContent=`${total}/27`;if(total===27)setTimeout(finishCalibration,450)})}
-function finishCalibration(){webgazer.showVideoPreview(false).showPredictionPoints(false);$("calibrationView").classList.add("hidden");$("gazeDot").classList.add("hidden");recordEvent("eye_tracking_calibrated",{});beginLessons()}
-function onGaze(data){
-  if(!data||!state.eyeTracking||!Number.isFinite(data.x)||!Number.isFinite(data.y)||document.hidden)return;
-  const view=currentView();
-  if(view!=="lesson"&&view!=="quiz")return;
-  const now=performance.now();if(now-state.lastGazeAt<100)return;state.lastGazeAt=now;
-  const geometry=classifyGaze(data.x,data.y,view);
-  state.gazeSamples.push({t:Math.round(now-state.startedAt),task_t:Math.round(now-state.phaseStartedAt),x:data.x,y:data.y,view,q:view==="quiz"?state.question+1:null,lesson:view==="lesson"?state.lesson+1:null,width:innerWidth,height:innerHeight,scroll_x:scrollX,scroll_y:scrollY,...geometry});
-}
-function currentView(){if(!$("quizView").classList.contains("hidden"))return"quiz";if(!$("lessonView").classList.contains("hidden"))return"lesson";return"other"}
-function gazeSummary(){const s={samples:state.gazeSamples.length,top:0,middle:0,bottom:0,offscreen:0};state.gazeSamples.forEach(g=>{const w=g.width||innerWidth,h=g.height||innerHeight;if(g.x<0||g.y<0||g.x>=w||g.y>=h)s.offscreen++;else if(g.y<h/3)s.top++;else if(g.y<h*2/3)s.middle++;else s.bottom++});return s}
-$("nextLesson").addEventListener("click",()=>{endResearchTask('completed');recordEvent("lesson_completed",{lesson:state.lesson+1,duration_ms:Math.round(performance.now()-state.phaseStartedAt)});state.lesson++;state.phaseStartedAt=performance.now();if(state.lesson<lessons.length){renderLesson();startResearchTask('lesson',state.lesson+1)}else{state.question=0;show("quizView");renderQuestion();startResearchTask('quiz',1)}});
-function renderLesson(){const l=lessons[state.lesson];$("lessonKicker").textContent=`Lesson ${state.lesson+1} of 3`;$("lessonTitle").textContent=l.title;$("lessonBody").innerHTML=l.body;$("nextLesson").innerHTML=state.lesson===2?'Start the test <span aria-hidden="true">→</span>':'Next lesson <span aria-hidden="true">→</span>';setProgress((state.lesson+1)/4,`Lesson ${state.lesson+1} of 3`);focusMain();}
-function renderQuestion(){const q=questions[state.question];state.phaseStartedAt=performance.now();state.changes=0;$("subjectPill").textContent=q.subject;$("questionCount").textContent=`Question ${state.question+1} of 10`;$("questionText").textContent=q.text;$("questionVisual").innerHTML=q.image?`<img class="face-stimulus" src="${q.image}" alt="A person showing an emotion" />`:"";$("answers").innerHTML=q.options.map((o,i)=>`<label class="answer-option"><input type="radio" name="answer" value="${escapeHtml(o)}"><span>${String.fromCharCode(65+i)}. ${escapeHtml(o)}</span></label>`).join("");$("answerMessage").classList.add("hidden");$("nextQuestion").disabled=true;$("nextQuestion").innerHTML=state.question===9?'See results <span aria-hidden="true">→</span>':'Continue <span aria-hidden="true">→</span>';$("answers").addEventListener("change",chooseAnswer);renderDots();setProgress((3+((state.question+1)/10))/4,`Test · Question ${state.question+1} of 10`);focusMain();}
-function chooseAnswer(e){state.changes++;document.querySelectorAll(".answer-option").forEach(x=>x.classList.remove("selected"));e.target.closest(".answer-option").classList.add("selected");$("nextQuestion").disabled=false;const q=questions[state.question],correct=e.target.value===q.answer;$("answerMessage").textContent=correct?"Answer recorded. You can continue.":"Answer recorded. You can still continue.";$("answerMessage").classList.remove("hidden");}
-$("nextQuestion").addEventListener("click",()=>{const selected=document.querySelector('input[name="answer"]:checked');if(!selected)return;const q=questions[state.question];state.answers.push({question:state.question+1,subject:q.subject,response:selected.value,correct:selected.value===q.answer,response_ms:Math.round(performance.now()-state.phaseStartedAt),answer_changes:Math.max(0,state.changes-1)});endResearchTask('completed',state.answers.at(-1));recordEvent("answer_submitted",state.answers.at(-1));state.question++;if(state.question<questions.length){renderQuestion();startResearchTask('quiz',state.question+1)}else finish();});
-async function finish(completed=true){
-  if(state.finished)return;state.finished=true;
-  if(state.activeTask)endResearchTask('stopped');
-  const session=researchSnapshot(completed?'completed':'stopped'),score=session.score;
-  if(state.eyeTracking&&window.webgazer){webgazer.pause();$("gazeDot").classList.add("hidden")}
-  $("stopSession").classList.add("hidden");show("resultsView");$("progressShell").classList.add("hidden");
-  $("scoreValue").textContent=$("correctValue").textContent=score;$("incorrectValue").textContent=session.incorrect;$("scoreBar").style.width=`${score*10}%`;
-  if(!completed){document.querySelector('#resultsView .eyebrow').textContent='Session stopped';document.querySelector('#resultsView .lead').textContent=`${state.answers.length} of 10 answers submitted. Unanswered questions are not scored as incorrect.`;}
-  try{await queueResearchSave(session);$("saveStatus").textContent='Saved on this device. Download the research Excel report below.';}
-  catch(error){$("saveStatus").textContent='Local saving failed. Download this session Excel now before leaving this page.';}
-  focusMain();
-}
-function setProgress(v,label){$("progressBar").style.width=`${Math.round(v*100)}%`;$("percentLabel").textContent=`${Math.round(v*100)}%`;$("stepLabel").textContent=label}function renderDots(){$("questionDots").className="question-dots";$("questionDots").innerHTML=questions.map((_,i)=>`<span class="dot ${i<state.question?'done':i===state.question?'current':''}">${i<state.question?'✓':i+1}</span>`).join("")}function show(id){["setupView","lessonView","quizView","resultsView"].forEach(x=>$(x).classList.toggle("hidden",x!==id))}function focusMain(){scrollTo({top:0,behavior:state.condition==="adapted"?"auto":"smooth"});$("main").focus()}function escapeHtml(s){return s.replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
-function db(){return new Promise((resolve,reject)=>{const r=indexedDB.open("codexLearnStudy",1);r.onupgradeneeded=()=>r.result.createObjectStore("sessions",{keyPath:"session_id"});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}async function saveSession(s){const d=await db();return new Promise((resolve,reject)=>{const t=d.transaction("sessions","readwrite");t.objectStore("sessions").put(s);t.oncomplete=resolve;t.onerror=()=>reject(t.error)})}async function allSessions(){const d=await db();return new Promise((resolve,reject)=>{const r=d.transaction("sessions").objectStore("sessions").getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}function recordEvent(type,data){const log=JSON.parse(sessionStorage.getItem("codexEvents")||"[]");log.push({session_id:state.sessionId,type,at:new Date().toISOString(),...data});sessionStorage.setItem("codexEvents",JSON.stringify(log))}
-$("downloadCsv").addEventListener("click",async()=>{const sessions=await allSessions(),rows=[["session_id","participant_id","condition","started_at","completed_at","completed","total_duration_ms","score","incorrect","question","subject","response","correct","response_ms","answer_changes","viewport","eye_tracking","gaze_samples","gaze_top","gaze_middle","gaze_bottom","gaze_offscreen"]];sessions.forEach(s=>s.answers.forEach(a=>rows.push([s.session_id,s.participant_id,s.condition,s.started_at,s.completed_at,s.completed,s.total_duration_ms,s.score,s.incorrect,a.question,a.subject,a.response,a.correct,a.response_ms,a.answer_changes,s.viewport,s.eye_tracking||false,s.gaze_summary?.samples||0,s.gaze_summary?.top||0,s.gaze_summary?.middle||0,s.gaze_summary?.bottom||0,s.gaze_summary?.offscreen||0])));const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\r\n"),url=URL.createObjectURL(new Blob([csv],{type:"text/csv"})),a=document.createElement("a");a.href=url;a.download=`adaptive-learning-study-data-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url)});$("newParticipant").addEventListener("click",()=>location.reload());$("soundToggle").addEventListener("click",e=>{const on=e.currentTarget.getAttribute("aria-pressed")==="true";e.currentTarget.setAttribute("aria-pressed",String(!on));e.currentTarget.textContent=on?"Sound off":"Sound on"});
-addEventListener("beforeunload",()=>{if(state.sessionId&&state.answers.length<10)recordEvent("session_abandoned",{last_question:state.question+1,answers_completed:state.answers.length})});
 
-// Keep both gaze markers invisible. Recording continues without a visual cue.
-const gazeVisibilityStyle=document.createElement("style");
-gazeVisibilityStyle.textContent="#gazeDot,#webgazerGazeDot{display:none!important;pointer-events:none!important}";
-document.head.appendChild(gazeVisibilityStyle);
-if(window.webgazer)webgazer.showPredictionPoints(false);
-
-const excelButton=document.createElement("button");
-excelButton.id="downloadExcel";excelButton.type="button";excelButton.className="secondary-button";
-excelButton.textContent="Download this session Excel + gaze diagram";
-$("downloadCsv").parentElement.appendChild(excelButton);
-let excelLoadPromise;
-function loadExcelLibrary(){
-  if(window.ExcelJS)return Promise.resolve(window.ExcelJS);
-  if(excelLoadPromise)return excelLoadPromise;
-  excelLoadPromise=new Promise((resolve,reject)=>{
-    const script=document.createElement("script");
-    const timer=setTimeout(()=>fail(),30000);
-    function fail(){clearTimeout(timer);script.remove();excelLoadPromise=null;reject(new Error("Excel export software could not load. Check your connection and try again. CSV export is still available."));}
-    script.src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
-    script.onload=()=>{clearTimeout(timer);if(window.ExcelJS)resolve(window.ExcelJS);else fail();};
-    script.onerror=fail;document.head.appendChild(script);
-  });
-  return excelLoadPromise;
+let state = freshState();
+function freshState() {
+  return {
+    build: BUILD,
+    schemaVersion: SCHEMA,
+    participantId: "",
+    orderGroup: "",
+    period: 1,
+    studyStage: "pilot",
+    condition: "standard",
+    webgazerRequested: false,
+    eyeTracking: false,
+    sessionId: "",
+    sessionStartedAt: null,
+    activityStartedAt: null,
+    phaseStartedAt: 0,
+    lesson: 0,
+    question: 0,
+    answers: [],
+    events: [],
+    gazeSamples: [],
+    lastGazeAt: 0,
+    totalSamples: 0,
+    validSamples: 0,
+    calibration: { attempts: 0, errors: [], meanError: null, medianError: null, status: "not_run" },
+    breakStart: null,
+    totalBreakMs: 0,
+    breakCount: 0,
+    assistanceCount: 0,
+    finished: false,
+    resultSnapshot: null
+  };
 }
 
-function reportGaze(session){
-  const fallback=String(session.viewport||"").split("x").map(Number);
-  return (session.gaze_samples||[]).filter(g=>["lesson","quiz"].includes(g.view)).map(g=>{
-    const w=g.width||fallback[0],h=g.height||fallback[1];
-    const valid=Number.isFinite(g.x)&&Number.isFinite(g.y)&&w>0&&h>0;
-    return {...g,width:w,height:h,nx:valid?g.x/w:null,ny:valid?g.y/h:null,on_screen:valid&&g.x>=0&&g.y>=0&&g.x<w&&g.y<h};
+function logEvent(type, data = {}) {
+  state.events.push({
+    participant_id: state.participantId,
+    session_id: state.sessionId,
+    session: state.period,
+    condition: state.condition,
+    event: type,
+    timestamp: new Date().toISOString(),
+    performance_ms: state.sessionStartedAt ? Math.round(performance.now() - state.sessionStartedAt) : 0,
+    lesson: currentView() === "lesson" ? state.lesson + 1 : null,
+    question: currentView() === "quiz" ? state.question + 1 : null,
+    ...data
   });
 }
 
-function gazeDensityImage(samples){
-  const canvas=document.createElement("canvas");canvas.width=1200;canvas.height=680;
-  const ctx=canvas.getContext("2d");if(!ctx)throw new Error("This browser cannot draw the gaze diagram.");
-  ctx.fillStyle="#ffffff";ctx.fillRect(0,0,1200,680);
-  ctx.fillStyle="#17352f";ctx.font="bold 28px Arial";ctx.fillText("Estimated gaze density",42,42);
-  ctx.font="17px Arial";ctx.fillText("Darker cells contain more recorded samples. Calibration and off-screen samples are excluded.",42,74);
-  ["lesson","quiz"].forEach((phase,panel)=>{
-    const x=65+panel*595,y=165,w=480,h=360,cols=20,rows=15;
-    const selected=samples.filter(g=>g.view===phase&&g.on_screen),bins=Array(cols*rows).fill(0);
-    selected.forEach(g=>bins[Math.floor(g.ny*rows)*cols+Math.floor(g.nx*cols)]++);
-    const max=Math.max(0,...bins);
-    ctx.fillStyle="#17352f";ctx.font="bold 23px Arial";ctx.fillText(phase==="lesson"?"Lessons":"Test",x,y-50);
-    ctx.font="16px Arial";ctx.fillText(`${selected.length} on-screen samples`,x,y-24);
-    for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
-      const fraction=max?bins[row*cols+col]/max:0;
-      const light=[240,245,243],dark=[32,105,94];
-      ctx.fillStyle=`rgb(${light.map((v,i)=>Math.round(v+(dark[i]-v)*fraction)).join(",")})`;
-      ctx.fillRect(x+col*w/cols,y+row*h/rows,w/cols,h/rows);
+function show(id) {
+  ["researcherView", "participantIntroView", "lessonView", "quizView", "completionView", "researcherResultsView"].forEach((view) => {
+    $(view).classList.toggle("hidden", view !== id);
+  });
+  window.scrollTo({ top: 0, behavior: "auto" });
+  $("main").focus();
+}
+
+function setMode(mode) {
+  $("app").classList.toggle("researcher-mode", mode === "researcher");
+  $("app").classList.toggle("participant-mode", mode === "participant");
+  $("app").classList.toggle("standard", mode === "participant" && state.condition === "standard");
+  $("app").classList.toggle("adapted", mode === "participant" && state.condition === "adapted");
+  document.querySelector(".researcher-header").classList.toggle("hidden", mode !== "researcher");
+}
+
+function resolveConditionFromOrder() {
+  const order = $("studyOrder").value;
+  const period = Number($("studyPeriod").value);
+  if (!order) return;
+  const expected = order === "AS"
+    ? (period === 1 ? "standard" : "adapted")
+    : (period === 1 ? "adapted" : "standard");
+  document.querySelectorAll('input[name="condition"]').forEach((r) => { r.checked = r.value === expected; });
+}
+$("studyOrder").addEventListener("change", resolveConditionFromOrder);
+$("studyPeriod").addEventListener("change", resolveConditionFromOrder);
+
+$("setupForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  resolveConditionFromOrder();
+  state = freshState();
+  state.participantId = $("participantId").value.trim();
+  state.orderGroup = $("studyOrder").value;
+  state.period = Number($("studyPeriod").value);
+  state.studyStage = $("studyStage").value;
+  state.condition = document.querySelector('input[name="condition"]:checked').value;
+  state.webgazerRequested = $("eyeTrackingConsent").checked;
+  state.sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  state.sessionStartedAt = performance.now();
+  logEvent("session_configured", { webgazer_requested: state.webgazerRequested, order_group: state.orderGroup });
+  setMode("participant");
+  show("participantIntroView");
+});
+
+$("participantStart").addEventListener("click", () => {
+  logEvent("participant_started");
+  if (state.webgazerRequested) {
+    $("calibrationView").classList.remove("hidden");
+  } else {
+    beginLessons();
+  }
+});
+
+$("startCalibration").addEventListener("click", async () => {
+  const button = $("startCalibration");
+  button.disabled = true;
+  $("cameraStatus").textContent = "Starting camera…";
+  try {
+    if (!window.webgazer) throw new Error("WebGazer did not load");
+    await webgazer.saveDataAcrossSessions(false).setRegression("ridge").setGazeListener(onGaze).begin();
+    webgazer.showVideoPreview(false).showPredictionPoints(false).applyKalmanFilter(true);
+    state.eyeTracking = true;
+    state.calibration.attempts += 1;
+    logEvent("eye_tracking_started", { attempt: state.calibration.attempts });
+    $("calibrationIntro").classList.add("hidden");
+    $("calibrationStage").classList.remove("hidden");
+    buildCalibration();
+  } catch (error) {
+    state.eyeTracking = false;
+    state.calibration.status = "startup_failed";
+    logEvent("eye_tracking_error", { message: String(error?.message || error) });
+    $("cameraStatus").textContent = "Eye tracking could not start. Please call the researcher.";
+  } finally {
+    button.disabled = false;
+  }
+});
+
+function buildCalibration() {
+  const positions = [[8,10],[50,10],[92,10],[8,50],[50,50],[92,50],[8,90],[50,90],[92,90]];
+  let total = 0;
+  $("calibrationProgress").textContent = "0/27";
+  $("calibrationPoints").innerHTML = positions.map((p, i) => `<button class="calibration-point" data-count="0" data-index="${i}" aria-label="Calibration point ${i + 1}" style="left:${p[0]}%;top:${p[1]}%"></button>`).join("");
+  $("calibrationPoints").onclick = (e) => {
+    const b = e.target.closest(".calibration-point");
+    if (!b || b.classList.contains("done")) return;
+    const n = Number(b.dataset.count) + 1;
+    b.dataset.count = String(n);
+    total += 1;
+    if (n >= 3) b.classList.add("done");
+    $("calibrationProgress").textContent = `${total}/27`;
+    if (total >= 27) setTimeout(startValidation, 350);
+  };
+}
+
+const validationPoints = [[20,20],[80,20],[50,50],[20,80],[80,80]];
+let validationIndex = 0;
+let validationReadings = [];
+let validationBuffer = [];
+let collectingValidation = false;
+
+function startValidation() {
+  $("calibrationStage").classList.add("hidden");
+  $("validationStage").classList.remove("hidden");
+  $("validationMessage").classList.add("hidden");
+  validationIndex = 0;
+  validationReadings = [];
+  showValidationPoint();
+}
+
+function showValidationPoint() {
+  if (validationIndex >= validationPoints.length) return finishValidation();
+  const [x, y] = validationPoints[validationIndex];
+  const target = $("validationTarget");
+  target.style.left = `${x}%`;
+  target.style.top = `${y}%`;
+  target.classList.remove("hidden");
+  validationBuffer = [];
+  collectingValidation = false;
+  setTimeout(() => { collectingValidation = true; }, 350);
+  setTimeout(() => {
+    collectingValidation = false;
+    const usable = validationBuffer.filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+    if (usable.length) {
+      const avgX = usable.reduce((s,p) => s + p.x, 0) / usable.length;
+      const avgY = usable.reduce((s,p) => s + p.y, 0) / usable.length;
+      const targetX = innerWidth * x / 100;
+      const targetY = innerHeight * y / 100;
+      validationReadings.push(Math.hypot(avgX - targetX, avgY - targetY));
     }
-    ctx.strokeStyle="#48635a";ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);
-    ctx.fillStyle="#17352f";ctx.font="15px Arial";
-    ctx.fillText("0%",x-8,y+h+24);ctx.fillText("50%",x+w/2-15,y+h+24);ctx.fillText("100%",x+w-30,y+h+24);
-    ctx.fillText("0%",x-34,y+5);ctx.fillText("50%",x-40,y+h/2+5);ctx.fillText("100%",x-45,y+h);
-    ctx.fillText("Horizontal position in browser viewport",x+85,y+h+50);
-    ctx.fillText(`Cell scale: 0 to ${max} samples (separate scale per panel)`,x,y+h+78);
-    if(!selected.length){ctx.font="bold 20px Arial";ctx.fillText("No recorded on-screen gaze samples",x+52,y+h/2);}
-  });
-  ctx.fillStyle="#526960";ctx.font="16px Arial";
-  ctx.fillText("Top-left origin. Screen positions are normalised; this is not a page-content overlay or a fixation map.",42,640);
-  return canvas.toDataURL("image/png");
+    validationIndex += 1;
+    showValidationPoint();
+  }, 1200);
 }
 
-function excelTable(book,name,headers,rows,widths){
-  const sheet=book.addWorksheet(name);sheet.addRow(headers);rows.forEach(row=>sheet.addRow(row));
-  sheet.views=[{state:"frozen",ySplit:1}];
-  headers.forEach((header,i)=>{sheet.getColumn(i+1).width=widths[i]||20;});
-  sheet.getRow(1).height=34;
-  sheet.getRow(1).eachCell(cell=>{cell.font={name:"Calibri",size:12,bold:true,color:{argb:"FFFFFFFF"}};cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF24685A"}};cell.alignment={vertical:"middle",wrapText:true};});
-  if(rows.length)sheet.autoFilter={from:{row:1,column:1},to:{row:rows.length+1,column:headers.length}};
-  return sheet;
+function finishValidation() {
+  $("validationTarget").classList.add("hidden");
+  const values = validationReadings.filter(Number.isFinite).sort((a,b) => a-b);
+  const mean = values.length ? values.reduce((a,b) => a+b, 0) / values.length : null;
+  const median = values.length ? values[Math.floor(values.length / 2)] : null;
+  state.calibration.errors = values.map(v => Math.round(v));
+  state.calibration.meanError = mean == null ? null : Math.round(mean);
+  state.calibration.medianError = median == null ? null : Math.round(median);
+  const threshold = Math.min(innerWidth, innerHeight) * 0.18;
+  const pass = values.length >= 3 && mean != null && mean <= threshold;
+  state.calibration.status = pass ? "acceptable" : "recalibrate";
+  logEvent("calibration_validated", { status: state.calibration.status, mean_error_px: state.calibration.meanError, median_error_px: state.calibration.medianError, points_valid: values.length });
+  $("validationMessage").classList.remove("hidden");
+  $("validationHeading").textContent = pass ? "You're ready." : "Let's try that once more.";
+  $("validationText").textContent = pass ? "The activity will begin now." : "Please stay comfortably in the same position and look directly at each dot.";
+  $("continueAfterValidation").classList.toggle("hidden", !pass);
+  $("retryCalibration").classList.toggle("hidden", pass);
 }
 
-async function buildSessionWorkbook(session,ExcelJS){
-  const book=new ExcelJS.Workbook();book.creator="Adaptive Learning Study";
-  const samples=reportGaze(session),onScreen=samples.filter(g=>g.on_screen).length;
-  const summary=excelTable(book,"Session",["Measure","Value"],[
-    ["Participant ID",session.participant_id],["Session ID",session.session_id],
-    ["Interface",session.condition],["Started (UTC)",session.started_at],
-    ["Completed (UTC)",session.completed_at],["Completed",Boolean(session.completed)],
-    ["Correct responses",session.score],["Incorrect responses",session.incorrect],
-    ["Total duration (ms)",session.total_duration_ms],["Eye tracking enabled",Boolean(session.eye_tracking)],
-    ["Lesson/test gaze samples",samples.length],["On-screen samples",onScreen],
-    ["Off-screen/invalid samples",samples.length-onScreen],
-    ["Diagram type","Sample-density image; not fixation duration or attention scoring"],
-    ["Sampling","At most 10 samples/second; actual intervals vary"],
-    ["Scope","This completed session only; use CSV for all local sessions"],
-    ["Privacy","No camera images in this file. Gaze coordinates remain sensitive research data."],
-    ["Timing","Milliseconds since session start, including calibration/setup"],
-    ["Coordinate origin","Top left of browser viewport; width/height are stored per sample"],
-    ["Diagram exclusions","Calibration, hidden-tab samples and off-screen coordinates"],
-    ["Interpretation","Screen position is not the same as attention to a specific element"],
-    ["Source","WebGazer estimates recorded on this participant device"],
-    ["Method reference","https://webgazer.cs.brown.edu/"],
-  ],[32,92]);
-  summary.getColumn(2).alignment={wrapText:true,vertical:"top"};
-  for(let row=15;row<=24;row++)summary.getRow(row).height=32;
-  excelTable(book,"Responses",["Question","Subject","Response","Correct","Response time (ms)","Answer changes"],
-    (session.answers||[]).map(a=>[a.question,a.subject,a.response,a.correct,a.response_ms,a.answer_changes]),[12,18,48,12,23,20]);
-  const gaze=excelTable(book,"Gaze samples",["Time (ms)","Phase","Lesson","Question","X (px)","Y (px)","Viewport width","Viewport height","X fraction","Y fraction","On screen","Scroll X (px)","Scroll Y (px)"],
-    samples.map(g=>[g.t,g.view,g.lesson??null,g.view==="quiz"?g.q:null,g.x,g.y,g.width,g.height,g.nx,g.ny,g.on_screen,g.scroll_x??null,g.scroll_y??null]),[17,15,12,12,15,15,20,20,16,16,15,18,18]);
-  gaze.getColumn(9).numFmt="0.0000";gaze.getColumn(10).numFmt="0.0000";
-  const diagram=book.addWorksheet("Gaze pattern");
-  diagram.getColumn(1).width=145;
-  diagram.getCell("A1").value="Gaze pattern — this session";
-  diagram.getCell("A1").font={name:"Calibri",size:18,bold:true,color:{argb:"FF17352F"}};
-  diagram.getRow(1).height=30;
-  diagram.getCell("A2").value="Estimated sample density during lessons and test. Darker cells mean more samples, not longer validated fixations.";
-  diagram.getCell("A2").alignment={wrapText:true};diagram.getRow(2).height=32;
-  const imageId=book.addImage({base64:gazeDensityImage(samples),extension:"png"});
-  diagram.addImage(imageId,{tl:{col:0,row:3},ext:{width:960,height:544}});
-  return book;
-}
-
-excelButton.addEventListener("click",async()=>{
-  excelButton.disabled=true;$("saveStatus").textContent="Preparing Excel report…";
-  try{
-    let sessions=[];try{sessions=await allSessions()}catch(error){console.warn(error)}
-    const session=state.finished?researchSnapshot(state.answers.length===10?'completed':'stopped'):sessions.find(s=>s.session_id===state.sessionId);
-    if(!session)throw new Error("No saved completed session was found. Finish the test first.");
-    const ExcelJS=await loadExcelLibrary();
-    const workbook=await buildResearchWorkbook([session],ExcelJS);
-    const buffer=await workbook.xlsx.writeBuffer();
-    const url=URL.createObjectURL(new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
-    const a=document.createElement("a");a.href=url;
-    const safeId=String(session.participant_id||"participant").replace(/[^a-zA-Z0-9_-]/g,"_").slice(0,40);
-    a.download=`learning-study-${safeId}-${session.session_id}.xlsx`;
-    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-    $("saveStatus").textContent="Excel report download started. It includes responses, gaze coordinates and the gaze diagram. Data stays on this device.";
-  }catch(error){$("saveStatus").textContent=`Excel download failed: ${error.message||error}`;}
-  finally{excelButton.disabled=false;}
+$("retryCalibration").addEventListener("click", () => {
+  state.calibration.attempts += 1;
+  logEvent("calibration_retried", { attempt: state.calibration.attempts });
+  $("validationStage").classList.add("hidden");
+  $("calibrationStage").classList.remove("hidden");
+  buildCalibration();
 });
 
-// Research recording. These controls are common to both interface conditions.
-function syncResearchCondition(){
-  const order=$('studyOrder').value,period=Number($('studyPeriod').value);
-  if(!['AS','SA'].includes(order))return;
-  const condition=order[period-1]==='A'?'adapted':'standard';
-  document.querySelectorAll('input[name="condition"]').forEach(r=>{
-    r.checked=r.value===condition;r.closest('.condition-card').classList.toggle('selected',r.checked);
-    r.closest('.condition-card').querySelector('.choice-check').textContent=r.checked?'Assigned':'Not this session';
-  });
-}
-['studyOrder','studyPeriod'].forEach(id=>$(id).addEventListener('change',syncResearchCondition));
-$('setupForm').addEventListener('submit',()=>{
-  syncResearchCondition();state.orderGroup=$('studyOrder').value;state.period=Number($('studyPeriod').value);state.studyStage=$('studyStage').value;
-  state.tasks=[];state.finished=false;state.startedUtc=new Date().toISOString();state.recordingVisible=!document.hidden;
-  setTimeout(()=>{if(state.sessionId&&!state.finished){$('conditionBadge').textContent=state.condition==='adapted'?'Interface 1':'Interface 2';checkpointResearch();}},0);
-},true);
-function classifyGaze(x,y,view){
-  const selectors=view==='quiz'?
-    [['question','#questionText'],['face_image','#questionVisual img'],['answers','#answers'],['navigation','#nextQuestion'],['progress','#progressShell'],['progress','.question-map'],['feedback','#answerMessage']]:
-    [['question','#lessonTitle'],['navigation','#nextLesson'],['lesson_content','#lessonBody'],['progress','#progressShell']];
-  const regions=[];
-  selectors.forEach(([name,selector])=>{
-    const el=document.querySelector(selector);if(!el||el.closest('.hidden'))return;
-    const style=getComputedStyle(el);if(style.display==='none'||style.visibility==='hidden')return;
-    const r=el.getBoundingClientRect();
-    const left=Math.max(0,r.left),top=Math.max(0,r.top),right=Math.min(innerWidth,r.right),bottom=Math.min(innerHeight,r.bottom);
-    if(right>left&&bottom>top)regions.push({name,left,top,right,bottom});
-  });
-  const off=x<0||y<0||x>=innerWidth||y>=innerHeight;
-  const hit=off?null:regions.find(r=>x>=r.left&&x<r.right&&y>=r.top&&y<r.bottom);
-  return {aoi_version:ResearchStudy.version,aoi:off?'offscreen':hit?.name||'other_screen',available_aois:[...new Set(regions.map(r=>r.name))],aoi_bounds:hit?[hit.left,hit.top,hit.right-hit.left,hit.bottom-hit.top]:null};
-}
-function startResearchTask(phase,number){
-  const now=performance.now();state.phaseStartedAt=now;
-  state.activeTask={phase,number,subject:phase==='quiz'?questions[number-1].subject:['Faces','Maths','English'][number-1],status:'in_progress',start:now,visible_ms:0,visibleSince:document.hidden?null:now};
-  checkpointResearch();
-}
-function taskSnapshot(){const t=state.activeTask;if(!t)return null;const now=performance.now();return {phase:t.phase,number:t.number,subject:t.subject,status:t.status,elapsed_ms:Math.round(now-t.start),visible_ms:Math.round(t.visible_ms+(t.visibleSince==null?0:now-t.visibleSince))};}
-function endResearchTask(status,answer){const t=taskSnapshot();if(!t)return;t.status=status;if(answer)Object.assign(t,{response:answer.response,correct:answer.correct,answer_changes:answer.answer_changes});(state.tasks??=[]).push(t);state.activeTask=null;}
-document.addEventListener('visibilitychange',()=>{
-  const t=state.activeTask;if(t){const now=performance.now();if(document.hidden&&t.visibleSince!=null){t.visible_ms+=now-t.visibleSince;t.visibleSince=null}else if(!document.hidden)t.visibleSince=now;}
-  checkpointResearch();
+$("continueAfterValidation").addEventListener("click", () => {
+  $("calibrationView").classList.add("hidden");
+  beginLessons();
 });
-function researchSnapshot(status='checkpoint'){
-  const tasks=[...(state.tasks||[])],active=taskSnapshot();if(active)tasks.push(active);
-  ['lesson','quiz'].forEach(phase=>{const count=phase==='lesson'?3:10;for(let number=1;number<=count;number++)if(!tasks.some(t=>t.phase===phase&&t.number===number))tasks.push({phase,number,subject:phase==='quiz'?questions[number-1].subject:['Faces','Maths','English'][number-1],status:'not_started',elapsed_ms:null,visible_ms:null});});
-  const answered=state.answers||[],score=answered.filter(a=>a.correct).length;
-  if(status!=='checkpoint')state.endedUtc??=new Date().toISOString();
-  const ended=state.endedUtc||new Date().toISOString();
-  return {session_id:state.sessionId,participant_id:state.participantId,condition:state.condition,order_group:state.orderGroup,period:state.period,study_stage:state.studyStage,
-    schema_version:ResearchStudy.version,session_status:status,completed:status==='completed',started_at:state.startedUtc,completed_at:status==='checkpoint'?null:ended,last_saved_at:new Date().toISOString(),
-    total_duration_ms:state.startedUtc?new Date(ended)-new Date(state.startedUtc):null,setup_ms:state.setupMs??null,score,incorrect:answered.length-score,answers:answered,tasks,
-    user_agent:navigator.userAgent,viewport:`${innerWidth}x${innerHeight}`,eye_tracking:state.eyeTracking,gaze_summary:gazeSummary(),gaze_samples:state.gazeSamples};
-}
-let researchSaveQueue=Promise.resolve();
-function queueResearchSave(session){const snapshot=JSON.parse(JSON.stringify(session));researchSaveQueue=researchSaveQueue.catch(()=>{}).then(()=>saveSession(snapshot));return researchSaveQueue;}
-function checkpointResearch(){if(!state.sessionId||state.finished)return;queueResearchSave(researchSnapshot()).catch(error=>console.warn('Research checkpoint failed',error));}
-setInterval(checkpointResearch,5000);
-$('stopSession').addEventListener('click',()=>{if(confirm('Stop this session? Your submitted answers will be saved.'))finish(false)});
 
-const allExcelButton=document.createElement('button');allExcelButton.type='button';allExcelButton.className='secondary-button';allExcelButton.textContent='Download all local sessions Excel';
-$('downloadCsv').parentElement.appendChild(allExcelButton);
-allExcelButton.addEventListener('click',async()=>{
-  allExcelButton.disabled=true;$('saveStatus').textContent='Preparing all local sessions…';
-  try{const sessions=await allSessions();if(!sessions.length)throw new Error('No saved sessions in this browser.');const book=await buildResearchWorkbook(sessions,await loadExcelLibrary());
-    const url=URL.createObjectURL(new Blob([await book.xlsx.writeBuffer()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const link=document.createElement('a');link.href=url;link.download='learning-study-all-local-sessions.xlsx';link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);$('saveStatus').textContent='Research Excel download started. Includes only sessions saved in this browser.';
-  }catch(error){$('saveStatus').textContent=`Excel download failed: ${error.message}`;}finally{allExcelButton.disabled=false;}
-});
-async function buildResearchWorkbook(sessions,ExcelJS){
-  const book=new ExcelJS.Workbook();book.creator='Adaptive Learning Study';
-  book.calcProperties.fullCalcOnLoad=true;
-  ResearchStudy.tables(sessions).forEach(spec=>{
-    const rows=spec.rows.length?spec.rows:[spec.headers.map(()=>null)];const sheet=excelTable(book,spec.name,spec.headers,rows,spec.widths);
-    sheet.getRow(1).height=48;sheet.eachRow((row,n)=>{if(n>1){row.alignment={vertical:'top',wrapText:true};row.height=30;}});
-    if(spec.name==='Read me'){sheet.getColumn(2).width=110;sheet.eachRow((r,n)=>{if(n>1)r.height=48});}
-    if(spec.name==='Variable guide')sheet.eachRow((r,n)=>{if(n>1)r.height=58});
-    Object.entries(spec.formulas||{}).forEach(([col,fn])=>rows.forEach((row,i)=>{sheet.getCell(i+2,Number(col)+1).value={formula:fn(i+2)};}));
-    (spec.percent||[]).forEach(col=>sheet.getColumn(col+1).numFmt='0.0%');
-    spec.manual.forEach(col=>{for(let row=2;row<=rows.length+1;row++)sheet.getCell(row,col+1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1CC'}};});
+function onGaze(data, elapsedTime) {
+  state.totalSamples += 1;
+  if (!data || !state.eyeTracking || !Number.isFinite(data.x) || !Number.isFinite(data.y) || document.hidden) return;
+  state.validSamples += 1;
+  if (collectingValidation) validationBuffer.push({ x: data.x, y: data.y });
+  const view = currentView();
+  if (view !== "lesson" && view !== "quiz") return;
+  const now = performance.now();
+  if (now - state.lastGazeAt < 100) return;
+  state.lastGazeAt = now;
+  state.gazeSamples.push({
+    participant_id: state.participantId,
+    session_id: state.sessionId,
+    session: state.period,
+    condition: state.condition,
+    view,
+    lesson: view === "lesson" ? state.lesson + 1 : null,
+    question: view === "quiz" ? state.question + 1 : null,
+    timestamp: new Date().toISOString(),
+    elapsed_ms: Math.round(elapsedTime || 0),
+    x: Math.round(data.x * 100) / 100,
+    y: Math.round(data.y * 100) / 100,
+    normalized_x: data.x / innerWidth,
+    normalized_y: data.y / innerHeight,
+    viewport_width: innerWidth,
+    viewport_height: innerHeight,
+    aoi: classifyAOI(data.x, data.y, view)
   });
-  const diagrams=book.addWorksheet('Gaze diagrams');diagrams.getColumn(1).width=145;
-  sessions.forEach((session,i)=>{
-    const row=1+i*32;diagrams.getCell(row,1).value=`${session.participant_id} | ${session.condition} | ${session.session_id}`;diagrams.getCell(row,1).font={bold:true,size:14};
-    const image=book.addImage({base64:gazeDensityImage(ResearchStudy.samples(session)),extension:'png'});diagrams.addImage(image,{tl:{col:0,row:row+1},ext:{width:960,height:544}});
-  });
-  return book;
 }
+
+function classifyAOI(x, y, view) {
+  const candidates = view === "quiz"
+    ? [["question", "#questionText"], ["stimulus", "#questionVisual"], ["answers", "#answers"], ["navigation", "#nextQuestion"], ["progress", ".question-map"]]
+    : [["title", "#lessonTitle"], ["content", "#lessonBody"], ["navigation", "#nextLesson"]];
+  for (const [name, selector] of candidates) {
+    const el = document.querySelector(selector);
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return name;
+  }
+  return (x < 0 || y < 0 || x > innerWidth || y > innerHeight) ? "offscreen" : "other";
+}
+
+function currentView() {
+  if (!$("lessonView").classList.contains("hidden")) return "lesson";
+  if (!$("quizView").classList.contains("hidden")) return "quiz";
+  return "other";
+}
+
+function beginLessons() {
+  state.activityStartedAt = performance.now();
+  state.phaseStartedAt = performance.now();
+  state.lesson = 0;
+  $("progressShell").classList.remove("hidden");
+  $("pauseSession").classList.remove("hidden");
+  logEvent("activity_started");
+  show("lessonView");
+  renderLesson();
+}
+
+function renderLesson() {
+  const lesson = lessons[state.lesson];
+  state.phaseStartedAt = performance.now();
+  $("lessonKicker").textContent = `Lesson ${state.lesson + 1} of ${lessons.length}`;
+  $("lessonTitle").textContent = lesson.title;
+  $("lessonBody").innerHTML = lesson.body;
+  $("nextLesson").innerHTML = state.lesson === lessons.length - 1 ? 'Start questions <span aria-hidden="true">→</span>' : 'Next lesson <span aria-hidden="true">→</span>';
+  setProgress((state.lesson + 1) / 4, `Lesson ${state.lesson + 1} of ${lessons.length}`);
+  logEvent("lesson_presented", { lesson_number: state.lesson + 1 });
+}
+
+$("nextLesson").addEventListener("click", () => {
+  logEvent("lesson_completed", { lesson_number: state.lesson + 1, duration_ms: adjustedPhaseDuration() });
+  state.lesson += 1;
+  if (state.lesson < lessons.length) renderLesson();
+  else {
+    state.question = 0;
+    show("quizView");
+    renderQuestion();
+  }
+});
+
+function renderQuestion() {
+  const q = questions[state.question];
+  state.phaseStartedAt = performance.now();
+  $("subjectPill").textContent = q.subject;
+  $("questionCount").textContent = `Question ${state.question + 1} of ${questions.length}`;
+  $("questionText").textContent = q.text;
+  $("questionVisual").innerHTML = q.image ? `<img class="face-stimulus" src="${q.image}" alt="A person showing an emotion" />` : "";
+  $("answers").innerHTML = q.options.map((o, i) => `<label class="answer-option"><input type="radio" name="answer" value="${escapeHtml(o)}"><span>${String.fromCharCode(65 + i)}. ${escapeHtml(o)}</span></label>`).join("");
+  $("answerMessage").classList.add("hidden");
+  $("nextQuestion").disabled = true;
+  $("nextQuestion").innerHTML = state.question === questions.length - 1 ? 'Finish activity <span aria-hidden="true">→</span>' : 'Next question <span aria-hidden="true">→</span>';
+  $("answers").onchange = chooseAnswer;
+  renderDots();
+  setProgress((3 + ((state.question + 1) / questions.length)) / 4, `Question ${state.question + 1} of ${questions.length}`);
+  logEvent("question_presented", { question_number: state.question + 1, subject: q.subject });
+}
+
+function chooseAnswer(e) {
+  document.querySelectorAll(".answer-option").forEach(x => x.classList.remove("selected"));
+  e.target.closest(".answer-option").classList.add("selected");
+  $("nextQuestion").disabled = false;
+  $("answerMessage").textContent = "Answer recorded.";
+  $("answerMessage").classList.remove("hidden");
+}
+
+$("nextQuestion").addEventListener("click", () => {
+  const selected = document.querySelector('input[name="answer"]:checked');
+  if (!selected) return;
+  const q = questions[state.question];
+  const response = {
+    participant_id: state.participantId,
+    session_id: state.sessionId,
+    session: state.period,
+    condition: state.condition,
+    question: state.question + 1,
+    subject: q.subject,
+    response: selected.value,
+    correct: selected.value === q.answer,
+    response_ms: adjustedPhaseDuration()
+  };
+  state.answers.push(response);
+  logEvent("answer_submitted", { question_number: state.question + 1, subject: q.subject, correct: response.correct, response_ms: response.response_ms });
+  state.question += 1;
+  if (state.question < questions.length) renderQuestion();
+  else finishSession();
+});
+
+function adjustedPhaseDuration() {
+  return Math.max(0, Math.round(performance.now() - state.phaseStartedAt));
+}
+
+$("pauseSession").addEventListener("click", async () => {
+  if (state.breakStart == null) {
+    state.breakStart = performance.now();
+    state.breakCount += 1;
+    logEvent("break_started", { break_number: state.breakCount });
+    $("pauseSession").textContent = "Resume activity";
+    document.body.classList.add("study-paused");
+    if (state.eyeTracking && window.webgazer) webgazer.pause();
+  } else {
+    const duration = performance.now() - state.breakStart;
+    state.totalBreakMs += duration;
+    logEvent("break_ended", { break_number: state.breakCount, duration_ms: Math.round(duration) });
+    state.breakStart = null;
+    $("pauseSession").textContent = "Pause for a break";
+    document.body.classList.remove("study-paused");
+    if (state.eyeTracking && window.webgazer) await webgazer.resume();
+  }
+});
+
+async function finishSession() {
+  if (state.finished) return;
+  state.finished = true;
+  if (state.breakStart != null) {
+    state.totalBreakMs += performance.now() - state.breakStart;
+    state.breakStart = null;
+  }
+  if (state.eyeTracking && window.webgazer) webgazer.pause();
+  $("progressShell").classList.add("hidden");
+  $("pauseSession").classList.add("hidden");
+  state.resultSnapshot = sessionSnapshot();
+  saveLocal(state.resultSnapshot);
+  show("completionView");
+  logEvent("session_completed");
+  setTimeout(() => enableResearcherUnlock(), 500);
+}
+
+function enableResearcherUnlock() {
+  const unlock = (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "r") {
+      document.removeEventListener("keydown", unlock);
+      openResearcherResults();
+    }
+  };
+  document.addEventListener("keydown", unlock);
+}
+
+function openResearcherResults() {
+  setMode("researcher");
+  const snapshot = state.resultSnapshot || sessionSnapshot();
+  const quality = snapshot.gaze_valid_percentage == null ? "Not recorded" : `${snapshot.gaze_valid_percentage.toFixed(1)}%`;
+  $("researcherSummary").innerHTML = [
+    ["Participant", snapshot.participant_id],
+    ["Session", snapshot.session],
+    ["Condition", snapshot.condition === "adapted" ? "Autism-adapted" : "Conventional"],
+    ["Calibration", snapshot.calibration_status],
+    ["Mean validation error", snapshot.calibration_mean_error_px == null ? "—" : `${snapshot.calibration_mean_error_px} px`],
+    ["Valid gaze samples", quality],
+    ["Breaks", snapshot.break_count],
+    ["Correct responses", `${snapshot.score}/${questions.length}`]
+  ].map(([k,v]) => `<div class="summary-item"><span>${k}</span><strong>${v}</strong></div>`).join("");
+  $("saveStatus").textContent = "Session is stored locally in this browser. Download the CSV files before clearing browser data.";
+  show("researcherResultsView");
+}
+
+function sessionSnapshot() {
+  const now = performance.now();
+  const rawDuration = state.activityStartedAt ? now - state.activityStartedAt : 0;
+  const activeBreak = state.breakStart == null ? 0 : now - state.breakStart;
+  const breakMs = state.totalBreakMs + activeBreak;
+  const score = state.answers.filter(a => a.correct).length;
+  return {
+    schema_version: SCHEMA,
+    build: BUILD,
+    participant_id: state.participantId,
+    session_id: state.sessionId,
+    order_group: state.orderGroup,
+    session: state.period,
+    study_stage: state.studyStage,
+    condition: state.condition,
+    completed_at: new Date().toISOString(),
+    raw_duration_ms: Math.round(rawDuration),
+    break_duration_ms: Math.round(breakMs),
+    adjusted_duration_ms: Math.max(0, Math.round(rawDuration - breakMs)),
+    break_count: state.breakCount,
+    assistance_count: state.assistanceCount,
+    score,
+    incorrect: state.answers.length - score,
+    eye_tracking_requested: state.webgazerRequested,
+    eye_tracking_enabled: state.eyeTracking,
+    calibration_attempts: state.calibration.attempts,
+    calibration_status: state.calibration.status,
+    calibration_mean_error_px: state.calibration.meanError,
+    calibration_median_error_px: state.calibration.medianError,
+    gaze_total_samples: state.totalSamples,
+    gaze_valid_samples: state.validSamples,
+    gaze_valid_percentage: state.totalSamples ? (state.validSamples / state.totalSamples) * 100 : null,
+    viewport_width: innerWidth,
+    viewport_height: innerHeight,
+    answers: state.answers,
+    events: state.events,
+    gaze_samples: state.gazeSamples
+  };
+}
+
+function saveLocal(snapshot) {
+  const key = "adaptiveLearningStudySessions";
+  const sessions = JSON.parse(localStorage.getItem(key) || "[]");
+  sessions.push(snapshot);
+  localStorage.setItem(key, JSON.stringify(sessions));
+}
+
+$("downloadCsv").addEventListener("click", () => {
+  const snapshot = state.resultSnapshot || sessionSnapshot();
+  downloadCSV(`session-${safe(state.participantId)}-${state.period}.csv`, [flattenSession(snapshot)]);
+  downloadCSV(`responses-${safe(state.participantId)}-${state.period}.csv`, snapshot.answers);
+  downloadCSV(`events-${safe(state.participantId)}-${state.period}.csv`, snapshot.events);
+  downloadCSV(`gaze-${safe(state.participantId)}-${state.period}.csv`, snapshot.gaze_samples);
+  $("saveStatus").textContent = "Four CSV downloads started: session, responses, events and gaze.";
+});
+
+function flattenSession(s) {
+  const { answers, events, gaze_samples, ...flat } = s;
+  return flat;
+}
+
+function downloadCSV(filename, rows) {
+  if (!rows || !rows.length) rows = [{}];
+  const headers = [...new Set(rows.flatMap(r => Object.keys(r)))];
+  const csv = [headers.join(","), ...rows.map(r => headers.map(h => csvCell(r[h])).join(","))].join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function csvCell(value) {
+  const text = value == null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
+  return `"${text.replaceAll('"','""')}"`;
+}
+
+$("newParticipant").addEventListener("click", () => {
+  if (window.webgazer) {
+    try { webgazer.end(); } catch (_) {}
+  }
+  state = freshState();
+  setMode("researcher");
+  $("setupForm").reset();
+  $("eyeTrackingConsent").checked = true;
+  $("calibrationIntro").classList.remove("hidden");
+  $("calibrationStage").classList.add("hidden");
+  $("validationStage").classList.add("hidden");
+  $("cameraStatus").textContent = "";
+  show("researcherView");
+});
+
+function setProgress(v, label) {
+  const pct = Math.max(0, Math.min(100, Math.round(v * 100)));
+  $("progressBar").style.width = `${pct}%`;
+  $("percentLabel").textContent = `${pct}%`;
+  $("stepLabel").textContent = label;
+}
+
+function renderDots() {
+  $("questionDots").className = "question-dots";
+  $("questionDots").innerHTML = questions.map((_, i) => `<span class="dot ${i < state.question ? "done" : i === state.question ? "current" : ""}">${i < state.question ? "✓" : i + 1}</span>`).join("");
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>'"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[c]));
+}
+function safe(s) { return String(s || "participant").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40); }
+
+setMode("researcher");
+show("researcherView");
