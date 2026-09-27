@@ -19,3 +19,85 @@
 
 /* Keep instructions between target rows, including short landscape viewports. */
 @media(max-height:400px){.calibration-instruction{font-size:.8rem;padding:8px 12px}}
+
+
+/* Research results and gaze-pattern report */
+.researcher-result-button { margin-top: 1.25rem; }
+.results-panel {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid #d7e3df;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(25, 55, 47, 0.06);
+}
+.results-panel h2 { margin: 0 0 .75rem; }
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.table-scroll {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid #d7e3df;
+  border-radius: 10px;
+}
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+  font-size: .94rem;
+}
+.results-table th,
+.results-table td {
+  padding: .75rem;
+  border-bottom: 1px solid #e5ece9;
+  text-align: left;
+  vertical-align: top;
+}
+.results-table th {
+  background: #eff5f3;
+  color: #334a43;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.result-badge {
+  display: inline-block;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.result-badge.correct { background: #dff3e7; color: #17613a; }
+.result-badge.incorrect { background: #f8dfdc; color: #8d2923; }
+.compact-summary { margin: 1rem 0; }
+.empty-results { color: #5a6864; padding: .75rem; }
+#gazePatternCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+  border: 1px solid #cfded9;
+  border-radius: 12px;
+  background: #f7faf9;
+}
+.diagram-key { color: #52635f; font-size: .9rem; }
+.diagram-key span {
+  display: inline-block;
+  width: .75rem;
+  height: .75rem;
+  border-radius: 50%;
+  margin: 0 .3rem 0 .7rem;
+}
+.key-start { background: #18864b; }
+.key-end { background: #c33b34; }
+.coordinates-details { margin-top: 1rem; }
+.coordinates-details summary { cursor: pointer; font-weight: 700; padding: .5rem 0; }
+.coordinate-scroll { max-height: 420px; }
+@media (max-width: 700px) {
+  .panel-heading { display: block; }
+  .panel-heading button { margin-top: .75rem; width: 100%; }
+}
