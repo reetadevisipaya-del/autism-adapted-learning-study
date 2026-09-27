@@ -219,13 +219,15 @@ function finishValidation() {
   state.calibration.medianError = median == null ? null : Math.round(median);
   const threshold = Math.min(innerWidth, innerHeight) * 0.18;
   const pass = values.length >= 3 && mean != null && mean <= threshold;
-  state.calibration.status = pass ? "acceptable" : "recalibrate";
+  // Calibration quality is retained as research metadata, but it never blocks
+  // the participant or forces a second calibration attempt.
+  state.calibration.status = pass ? "acceptable" : "low_quality_continue";
   logEvent("calibration_validated", { status: state.calibration.status, mean_error_px: state.calibration.meanError, median_error_px: state.calibration.medianError, points_valid: values.length });
   $("validationMessage").classList.remove("hidden");
-  $("validationHeading").textContent = pass ? "You're ready." : "Let's try that once more.";
-  $("validationText").textContent = pass ? "The activity will begin now." : "Please stay comfortably in the same position and look directly at each dot.";
-  $("continueAfterValidation").classList.toggle("hidden", !pass);
-  $("retryCalibration").classList.toggle("hidden", pass);
+  $("validationHeading").textContent = "You're ready.";
+  $("validationText").textContent = "The activity is ready to begin.";
+  $("continueAfterValidation").classList.remove("hidden");
+  $("retryCalibration").classList.add("hidden");
 }
 
 $("retryCalibration").addEventListener("click", () => {
