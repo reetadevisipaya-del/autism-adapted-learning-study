@@ -422,6 +422,8 @@ function enableResearcherUnlock() {
   document.addEventListener("keydown", unlock);
 }
 
+$("viewResearcherResults").addEventListener("click", openResearcherResults);
+
 function openResearcherResults() {
   setMode("researcher");
   const snapshot = state.resultSnapshot || sessionSnapshot();
@@ -436,9 +438,97 @@ function openResearcherResults() {
     ["Breaks", snapshot.break_count],
     ["Correct responses", `${snapshot.score}/${questions.length}`]
   ].map(([k,v]) => `<div class="summary-item"><span>${k}</span><strong>${v}</strong></div>`).join("");
+  renderAnswerResults(snapshot);
+  renderGazeResults(snapshot);
   $("saveStatus").textContent = "Session is stored locally in this browser. Download the CSV files before clearing browser data.";
   show("researcherResultsView");
+  requestAnimationFrame(() => drawGazePattern(snapshot.gaze_samples || []));
 }
+
+function renderAnswerResults(snapshot) {
+  const rows = snapshot.answers || [];
+  $("answerResultsBody").innerHTML = rows.map((answer) => `
+    <tr>
+      <td>${answer.question}</td>
+      <td>${escapeHtml(answer.subject || "")}</td>
+      <td>${escapeHtml(answer.response || "")}</td>
+      <td><span class="result-badge ${answer.correct ? "correct" : "incorrect"}">${answer.correct ? "Correct" : "Incorrect"}</span></td>
+      <td>${(answer.response_ms / 1000).toFixed(1)} s</td>
+    </tr>`).join("");
+}
+
+function renderGazeResults(snapshot) {
+  const samples = snapshot.gaze_samples || [];
+  const counts = samples.reduce((acc, sample) => {
+    const key = sample.aoi || "other";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const ordered = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+  $("gazeAoiSummary").innerHTML = ordered.length
+    ? ordered.map(([area, count]) => `<div class="summary-item"><span>${escapeHtml(area.replaceAll("_", " "))}</span><strong>${count}</strong></div>`).join("")
+    : '<div class="empty-results">No usable gaze samples were recorded.</div>';
+  $("gazeResultsNote").textContent = samples.length
+    ? `${samples.length} recorded coordinates. The table displays up to the first 500; the gaze CSV contains every sample.`
+    : "Eye tracking did not produce usable lesson or question coordinates for this session.";
+
+  $("gazeCoordinatesBody").innerHTML = samples.slice(0, 500).map((sample, index) => {
+    const item = sample.view === "lesson" ? `Lesson ${sample.lesson || ""}` : `Question ${sample.question || ""}`;
+    return `<tr>
+      <td>${index + 1}</td><td>${escapeHtml(sample.view || "")}</td><td>${item}</td>
+      <td>${Number(sample.x).toFixed(1)}</td><td>${Number(sample.y).toFixed(1)}</td>
+      <td>${Number(sample.normalized_x).toFixed(4)}</td><td>${Number(sample.normalized_y).toFixed(4)}</td>
+      <td>${escapeHtml(sample.aoi || "other")}</td>
+    </tr>`;
+  }).join("");
+}
+
+function drawGazePattern(samples) {
+  const canvas = $("gazePatternCanvas");
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#f7faf9";
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = "#d7e3df";
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= width; x += width / 4) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,height); ctx.stroke(); }
+  for (let y = 0; y <= height; y += height / 4) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke(); }
+
+  const valid = samples.filter(s => Number.isFinite(s.normalized_x) && Number.isFinite(s.normalized_y));
+  const step = Math.max(1, Math.ceil(valid.length / 1200));
+  const points = valid.filter((_, i) => i % step === 0).map(s => ({
+    x: Math.max(0, Math.min(width, s.normalized_x * width)),
+    y: Math.max(0, Math.min(height, s.normalized_y * height))
+  }));
+  if (!points.length) {
+    ctx.fillStyle = "#52635f";
+    ctx.font = "22px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("No usable gaze coordinates recorded", width / 2, height / 2);
+    return;
+  }
+  ctx.strokeStyle = "rgba(42, 103, 148, 0.22)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+  ctx.fillStyle = "rgba(28, 112, 153, 0.18)";
+  points.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill(); });
+  [[points[0], "#18864b", 9], [points[points.length - 1], "#c33b34", 9]].forEach(([p, color, radius]) => {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(p.x, p.y, radius, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+$("downloadGazeDiagram").addEventListener("click", () => {
+  const canvas = $("gazePatternCanvas");
+  const link = document.createElement("a");
+  link.download = `gaze-pattern-${safe(state.participantId)}-${state.period}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+});
 
 function sessionSnapshot() {
   const now = performance.now();
