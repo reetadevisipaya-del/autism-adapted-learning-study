@@ -145,6 +145,7 @@
           <div class="eyebrow">Activity complete</div>
           <h1>Thank you for taking part.</h1>
           <p class="lead">Please tell the researcher that you have finished.</p>
+          <button id="viewResearcherResults" class="primary-button researcher-result-button" type="button">Researcher: view results</button>
         </div>
       </section>
 
@@ -157,6 +158,36 @@
           <span class="researcher-badge">RESEARCHER ONLY</span>
         </div>
         <div id="researcherSummary" class="summary-grid"></div>
+
+        <section class="results-panel" aria-labelledby="answerResultsHeading">
+          <h2 id="answerResultsHeading">Question results</h2>
+          <div class="table-scroll">
+            <table class="results-table">
+              <thead><tr><th>Question</th><th>Subject</th><th>Response</th><th>Result</th><th>Time</th></tr></thead>
+              <tbody id="answerResultsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="results-panel" aria-labelledby="gazeResultsHeading">
+          <div class="panel-heading">
+            <div><h2 id="gazeResultsHeading">Eye-gaze results</h2><p id="gazeResultsNote" class="quiet-hint"></p></div>
+            <button id="downloadGazeDiagram" class="secondary-button" type="button">Download gaze diagram</button>
+          </div>
+          <div id="gazeAoiSummary" class="summary-grid compact-summary"></div>
+          <canvas id="gazePatternCanvas" width="1000" height="500" aria-label="Eye-gaze pattern diagram"></canvas>
+          <p class="diagram-key"><span class="key-start"></span> Start <span class="key-end"></span> End · Lines show the order of recorded gaze points.</p>
+          <details class="coordinates-details">
+            <summary>Show recorded gaze coordinates</summary>
+            <div class="table-scroll coordinate-scroll">
+              <table class="results-table">
+                <thead><tr><th>#</th><th>View</th><th>Item</th><th>X</th><th>Y</th><th>Normalized X</th><th>Normalized Y</th><th>Area</th></tr></thead>
+                <tbody id="gazeCoordinatesBody"></tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+
         <div class="researcher-actions">
           <button id="downloadCsv" class="secondary-button" type="button">Download research data</button>
           <button id="newParticipant" class="primary-button" type="button">Return to researcher console</button>
