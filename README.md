@@ -41,3 +41,12 @@ Freeze the exact build supplied to reviewers. Apply reviewer-requested changes t
 ## Research note
 
 The generated face images are prototype stimuli, not a validated facial-affect instrument. Replace them with an appropriately licensed/validated stimulus set if validated facial-affect stimuli are required by the final protocol. Human-participant testing should proceed only after the applicable institutional ethics approval and consent/assent process.
+
+
+## EV-1.1 — Learning + Research
+
+EV-1.1 adds a learner-facing **Explore** pathway alongside the existing controlled research study. Learners can choose Mathematics, Emotions, or English practice, receive gentle immediate feedback, and use a separate Math Toolkit with calculator and number-line support. This pathway uses local progress only and does not start WebGazer or write study records.
+
+### Experimentally frozen
+
+The Research Study entry retains the original three lessons, ten questions, question/order/scoring behaviour, data schema, researcher setup and WebGazer flow. The Math Toolkit and selectable practice activities are deliberately unavailable within its controlled quiz. This separation maintains the conventional-versus-adapted comparison while allowing the product experience to evolve independently.
