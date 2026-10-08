@@ -595,8 +595,7 @@ function flattenSession(s) {
 function downloadCSV(filename, rows) {
   if (!rows || !rows.length) rows = [{}];
   const headers = [...new Set(rows.flatMap(r => Object.keys(r)))];
-  const csv = [headers.join(","), ...rows.map(r => headers.map(h => csvCell(r[h])).join(","))].join("
-");
+  const csv = [headers.join(","), ...rows.map(r => headers.map(h => csvCell(r[h])).join(","))].join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url;
