@@ -87,7 +87,8 @@ function setMode(mode) {
   $("app").classList.toggle("participant-mode", mode === "participant");
   $("app").classList.toggle("standard", mode === "participant" && state.condition === "standard");
   $("app").classList.toggle("adapted", mode === "participant" && state.condition === "adapted");
-  document.querySelector(".researcher-header").classList.toggle("hidden", mode !== "researcher");\n  document.querySelector(".explore-header")?.classList.toggle("hidden", mode !== "explore");
+  document.querySelector(".researcher-header").classList.toggle("hidden", mode !== "researcher");
+  document.querySelector(".explore-header")?.classList.toggle("hidden", mode !== "explore");
 }
 
 function resolveConditionFromOrder() {
@@ -594,7 +595,8 @@ function flattenSession(s) {
 function downloadCSV(filename, rows) {
   if (!rows || !rows.length) rows = [{}];
   const headers = [...new Set(rows.flatMap(r => Object.keys(r)))];
-  const csv = [headers.join(","), ...rows.map(r => headers.map(h => csvCell(r[h])).join(","))].join("\n");
+  const csv = [headers.join(","), ...rows.map(r => headers.map(h => csvCell(r[h])).join(","))].join("
+");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url;
@@ -642,5 +644,5 @@ function escapeHtml(s) {
 }
 function safe(s) { return String(s || "participant").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40); }
 
-setMode("researcher");
-show("researcherView");
+setMode("explore");
+show("exploreView");
