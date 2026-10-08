@@ -2,7 +2,7 @@ if (window.webgazer) {
   window.webgazer.params.faceMeshSolutionPath = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619";
 }
 
-const BUILD = "EV-1.0";
+const BUILD = "EV-1.1";
 const SCHEMA = "2.0";
 const $ = (id) => document.getElementById(id);
 
@@ -75,7 +75,7 @@ function logEvent(type, data = {}) {
 }
 
 function show(id) {
-  ["researcherView", "participantIntroView", "lessonView", "quizView", "completionView", "researcherResultsView"].forEach((view) => {
+  ["exploreView", "researcherView", "participantIntroView", "lessonView", "quizView", "completionView", "researcherResultsView"].forEach((view) => {
     $(view).classList.toggle("hidden", view !== id);
   });
   window.scrollTo({ top: 0, behavior: "auto" });
@@ -87,7 +87,7 @@ function setMode(mode) {
   $("app").classList.toggle("participant-mode", mode === "participant");
   $("app").classList.toggle("standard", mode === "participant" && state.condition === "standard");
   $("app").classList.toggle("adapted", mode === "participant" && state.condition === "adapted");
-  document.querySelector(".researcher-header").classList.toggle("hidden", mode !== "researcher");
+  document.querySelector(".researcher-header").classList.toggle("hidden", mode !== "researcher");\n  document.querySelector(".explore-header")?.classList.toggle("hidden", mode !== "explore");
 }
 
 function resolveConditionFromOrder() {
