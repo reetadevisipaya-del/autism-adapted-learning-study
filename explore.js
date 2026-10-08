@@ -7,7 +7,7 @@
     emotions:{title:"Face clues", kicker:"Emotions · look for clues", prompt:"Look at the picture. Notice the eyes and mouth.", kind:"emotions", question:"Which feeling matches this face?", options:["Happy","Sad","Surprised"], answer:"Happy"},
     english:{title:"Word detective", kicker:"English · use the clue", prompt:"Read the sentence. Pick the word that makes sense.", kind:"english", question:"The puppy ran very ___.", options:["fast","table","blue"], answer:"fast"}
   };
-  function progress(){ const count=completed.size; $("learningProgressBar").style.width=(count/3*100)+"%"; $("learningProgressText").textContent=count+" activity"+(count===1?"":"ies")+" completed"; }
+  function progress(){ const count=completed.size; $("learningProgressBar").style.width=(count/3*100)+"%"; $("learningProgressText").textContent=count+" "+(count===1?"activity":"activities")+" completed"; }
   function goHome(){ $("exploreHome").classList.remove("hidden");$("learningActivity").classList.add("hidden");$("toolkitPanel").classList.add("hidden");progress();window.scrollTo(0,0); }
   function start(key){
     const x=content[key], visual=x.kind==="maths"?'<div class="counters" aria-label="six counters plus three counters"><span>● ● ● ● ● ●</span><b>+</b><span>● ● ●</span></div>':x.kind==="emotions"?'<div class="emotion-face" aria-label="smiling face">🙂</div>':'<div class="sentence-clue">“The puppy ran very <strong>___</strong> to catch the ball.”</div>';
