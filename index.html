@@ -10,13 +10,18 @@
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
   <div id="app" class="app researcher-mode">
+    
+    <header class="site-header explore-header">
+      <a class="brand" href="#" data-explore-home aria-label="Learning home"><span class="brand-mark">L</span><span>LEARN <b>TOGETHER</b></span></a>
+      <nav class="explore-nav" aria-label="Learning navigation"><button type="button" data-explore-home>My learning</button><button type="button" data-toolkit>Math toolkit</button><button type="button" class="study-link" data-open-research>Research study</button></nav>
+    </header>
     <header class="site-header researcher-header">
       <a class="brand" href="#" aria-label="Adaptive Learning Study home">
         <span class="brand-mark">A</span>
         <span>ADAPTIVE <b>LEARNING STUDY</b></span>
       </a>
       <div class="header-meta">
-        <span class="build-stamp">Expert Validation Build EV-1.0</span>
+        <span class="build-stamp">EV-1.1 · Learning + Research</span>
       </div>
     </header>
 
@@ -26,6 +31,21 @@
     </div>
 
     <main id="main" tabindex="-1">
+      <section id="exploreView" class="view explore-view" aria-live="polite">
+        <div id="exploreHome" class="explore-shell">
+          <div class="explore-hero"><div><p class="eyebrow">Choose one activity</p><h1>Learn in your own way.</h1><p class="lead">Small steps, clear choices, and helpful practice. You can stop or choose something else at any time.</p><div class="hero-actions"><button class="primary-button" type="button" data-start-lesson="maths">Start maths <span aria-hidden="true">→</span></button><button class="secondary-button" type="button" data-toolkit>Open math toolkit</button></div></div><div class="calm-card"><span aria-hidden="true">☀</span><strong>Today’s plan</strong><p>Choose one lesson. Try a few activities. Notice what helps.</p></div></div>
+          <div class="explore-progress"><span>My learning</span><div><i id="learningProgressBar"></i></div><strong id="learningProgressText">0 activities completed</strong></div>
+          <section><div class="section-heading"><div><p class="eyebrow">Choose a subject</p><h2>Lessons and playful practice</h2></div><p>Each lesson is separate. Nothing is timed.</p></div><div class="lesson-grid">
+            <article class="lesson-choice maths"><div class="subject-icon">＋</div><p class="eyebrow">Mathematics</p><h3>Number sense</h3><p>Practice adding, taking away, and finding half with counters and a number line.</p><button class="lesson-button" type="button" data-start-lesson="maths">Choose maths <span>→</span></button></article>
+            <article class="lesson-choice emotions"><div class="subject-icon">☺</div><p class="eyebrow">Emotions</p><h3>Face clues</h3><p>Look at eyes, eyebrows, and mouths. Match each clue to an emotion.</p><button class="lesson-button" type="button" data-start-lesson="emotions">Choose emotions <span>→</span></button></article>
+            <article class="lesson-choice english"><div class="subject-icon">Aa</div><p class="eyebrow">English</p><h3>Word detective</h3><p>Use a sentence clue to find a word that fits. Read it aloud if you like.</p><button class="lesson-button" type="button" data-start-lesson="english">Choose English <span>→</span></button></article>
+          </div></section>
+          <aside class="research-note"><div><strong>Taking part in the study?</strong><span>The research activity uses a separate fixed pathway.</span></div><button class="text-button" type="button" data-open-research>Open Research Study →</button></aside>
+        </div>
+        <div id="learningActivity" class="explore-shell hidden"></div>
+        <div id="toolkitPanel" class="explore-shell hidden"></div>
+      </section>
+
       <section id="researcherView" class="view researcher-console">
         <div class="console-heading">
           <div>
@@ -239,6 +259,6 @@
 
   <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
   <script src="research-export.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js"></script>\n  <script src="explore.js"></script>
 </body>
 </html>
